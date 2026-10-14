@@ -79,14 +79,17 @@ const mtEnv=z=>{const u=(((-z)/440)%7+7)%7;return ssm(2.85,3.15,u)*(1-ssm(3.85,4
 const cx=z=>Math.sin(z*.011)*16+Math.sin(z*.027+1.3)*6+Math.sin(z*.0041+.6)*11+mtEnv(z)*Math.sin(z*.052)*8;
 const dcx=z=>.176*Math.cos(z*.011)+.162*Math.cos(z*.027+1.3)+.0451*Math.cos(z*.0041+.6)+mtEnv(z)*.416*Math.cos(z*.052);
 const HZ=0xe9977f;
-const R=new T.WebGLRenderer({antialias:devicePixelRatio<2,powerPreference:'high-performance'});R.setPixelRatio(Math.min(devicePixelRatio,1.5));R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.08;document.body.prepend(R.domElement);
+const R=new T.WebGLRenderer({antialias:devicePixelRatio<2,powerPreference:'high-performance'});R.setPixelRatio(Math.min(devicePixelRatio,1.5));R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.08;R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;document.body.prepend(R.domElement);
 const S=new T.Scene();S.background=new T.Color(HZ);S.fog=new T.Fog(HZ,30,250);
 const C=new T.PerspectiveCamera(60,1,.1,700);
 function rs(){R.setSize(innerWidth,innerHeight);C.aspect=innerWidth/innerHeight;C.updateProjectionMatrix()}
 addEventListener('resize',rs);rs();
 
 const hemi=new T.HemisphereLight(0xffc49a,0x5a4a4a,.95);S.add(hemi);
-const sunL=new T.DirectionalLight(0xff9d5c,1.1);sunL.position.set(-80,26,-100);S.add(sunL);\n// Subtle warm bounce and cool sky-fill preserve shape detail without replacing the original lighting cycle.\nconst warmFill=new T.DirectionalLight(0xffd6b4,.18);warmFill.position.set(38,15,24);S.add(warmFill);\nconst skyFill=new T.DirectionalLight(0x879dce,.09);skyFill.position.set(-24,10,35);S.add(skyFill);
+const sunL=new T.DirectionalLight(0xff9d5c,1.1);sunL.position.set(-80,26,-100);sunL.castShadow=true;sunL.shadow.mapSize.set((navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512,(navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512);sunL.shadow.camera.left=-38;sunL.shadow.camera.right=38;sunL.shadow.camera.top=34;sunL.shadow.camera.bottom=-16;sunL.shadow.camera.near=.5;sunL.shadow.camera.far=240;sunL.shadow.bias=-.00025;sunL.shadow.normalBias=.035;sunL.shadow.camera.updateProjectionMatrix();S.add(sunL);S.add(sunL.target);
+// Subtle warm bounce and cool sky-fill preserve shape detail without replacing the original lighting cycle.
+const warmFill=new T.DirectionalLight(0xffd6b4,.18);warmFill.position.set(38,15,24);S.add(warmFill);
+const skyFill=new T.DirectionalLight(0x879dce,.09);skyFill.position.set(-24,10,35);S.add(skyFill);
 
 function tex(st){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),gr=g.createRadialGradient(32,32,0,32,32,32);st.forEach(s=>gr.addColorStop(s[0],s[1]));g.fillStyle=gr;g.fillRect(0,0,64,64);return new T.CanvasTexture(c)}
 const glowT=tex([[0,'rgba(255,240,190,1)'],[.25,'rgba(255,200,120,.5)'],[1,'rgba(255,170,90,0)']]);
@@ -117,7 +120,7 @@ float hillH(float z){float u=mod(-z/440.0,7.0);float k=floor(u),f=u-k;float a=mi
 `;
 T.ShaderChunk.project_vertex=T.ShaderChunk.project_vertex.replace('gl_Position = projectionMatrix * mvPosition;','{float hwz=(modelMatrix*vec4(transformed,1.0)).z;mvPosition.xyz+=(viewMatrix*vec4(0.0,hillH(hwz),0.0,0.0)).xyz;}\n\tgl_Position = projectionMatrix * mvPosition;');
 T.ShaderLib.sprite.vertexShader=T.ShaderLib.sprite.vertexShader.replace('vec4 mvPosition = modelViewMatrix * vec4( 0.0, 0.0, 0.0, 1.0 );','vec4 mvPosition = modelViewMatrix * vec4( 0.0, 0.0, 0.0, 1.0 );\n\tmvPosition.xyz += (viewMatrix*vec4(0.0,hillH((modelMatrix*vec4(0.0,0.0,0.0,1.0)).z),0.0,0.0)).xyz;');
-const gnd=new T.Mesh(new T.PlaneGeometry(700,700,1,100).rotateX(-Math.PI/2),new T.MeshLambertMaterial({color:0x4d6c35}));S.add(gnd);
+const gnd=new T.Mesh(new T.PlaneGeometry(700,700,1,100).rotateX(-Math.PI/2),new T.MeshLambertMaterial({color:0x4d6c35}));gnd.receiveShadow=true;S.add(gnd);
 
 // shared scenery assets
 const L=(c,o)=>new T.MeshLambertMaterial(Object.assign({color:c},o||{}));
@@ -270,7 +273,7 @@ if(bi===1){col[0]=col[3]=[.52,.37,.31];col[1]=col[2]=[.42,.29,.24]}if(bi===3){co
 {const hw=HW[bi];off[0]=-hw;off[1]=-hw+.8;off[2]=hw-.8;off[3]=hw}
 for(let k=0;k<=N;k++){const z=z0-k*CL/N,x=cx(z);for(let j=0;j<4;j++){P.push(x+off[j],.03,z);Co.push(...col[j])}}
 for(let k=0;k<N;k++)for(let j=0;j<3;j++){const a=k*4+j,b=a+4;I.push(a,a+1,b,a+1,b+1,b)}
-const gm=new T.BufferGeometry();gm.setAttribute('position',new T.Float32BufferAttribute(P,3));gm.setAttribute('color',new T.Float32BufferAttribute(Co,3));{const UV=[],hw2=HW[bi];for(let k=0;k<=N;k++){const zz=z0-k*CL/N;for(let j=0;j<4;j++)UV.push((off[j]+hw2)/(2*hw2),(-zz)/6)}gm.setAttribute('uv',new T.Float32BufferAttribute(UV,2))}gm.setIndex(I);gm.computeVertexNormals();const rd=new T.Mesh(gm,roadMat(ROADK[bi]));rd.userData.keep=1;g.add(rd);
+const gm=new T.BufferGeometry();gm.setAttribute('position',new T.Float32BufferAttribute(P,3));gm.setAttribute('color',new T.Float32BufferAttribute(Co,3));{const UV=[],hw2=HW[bi];for(let k=0;k<=N;k++){const zz=z0-k*CL/N;for(let j=0;j<4;j++)UV.push((off[j]+hw2)/(2*hw2),(-zz)/6)}gm.setAttribute('uv',new T.Float32BufferAttribute(UV,2))}gm.setIndex(I);gm.computeVertexNormals();const rd=new T.Mesh(gm,roadMat(ROADK[bi]));rd.userData.keep=1;rd.receiveShadow=true;g.add(rd);
 if(bi===4||bi===6)curbs(g,z0,HW[bi],false);if(bi===5)curbs(g,z0,HW[bi],true);
 const zm=z0-CL/2,xm=cx(zm),yaw=Math.atan(dcx(zm)),mci=Math.round((i-5)/8)*8+5,hasM=(i===mci),skipSide=(Math.abs(i-mci)<=1&&mci>=5)?mSideOf(mci):0,mSg=skipSide;
 if(GRC[bi]){const gp=new T.Mesh(new T.PlaneGeometry(160,CL+6,1,4).rotateX(-Math.PI/2),GRM[bi]||(GRM[bi]=L(GRC[bi])));gp.position.set(xm,.01+(i%2)*.004,zm);gp.rotation.y=yaw;g.add(gp)}
@@ -1018,7 +1021,7 @@ function merge(g){g.updateMatrixWorld(true);const B=new Map(),rm=[];
  rm.forEach(o=>o.parent.remove(o));
  B.forEach((a,m)=>{let n=0;a.forEach(x=>n+=x.attributes.position.count);const P=new Float32Array(n*3),N=new Float32Array(n*3),U=new Float32Array(n*2);let i=0;
   a.forEach(x=>{P.set(x.attributes.position.array,i*3);N.set(x.attributes.normal.array,i*3);U.set(x.attributes.uv.array,i*2);i+=x.attributes.position.count;x.dispose()});
-  const ge=new T.BufferGeometry();ge.setAttribute('position',new T.BufferAttribute(P,3));ge.setAttribute('normal',new T.BufferAttribute(N,3));ge.setAttribute('uv',new T.BufferAttribute(U,2));g.add(new T.Mesh(ge,m));g.userData.d.push(ge)})}
+  const ge=new T.BufferGeometry();ge.setAttribute('position',new T.BufferAttribute(P,3));ge.setAttribute('normal',new T.BufferAttribute(N,3));ge.setAttribute('uv',new T.BufferAttribute(U,2));const merged=new T.Mesh(ge,m);merged.castShadow=!m.transparent;merged.receiveShadow=true;g.add(merged);g.userData.d.push(ge)})}
 const flM=[0xf7a1c4,0xffffff,0xffe066,0xc89bff].map(c=>L(c,{emissive:c,emissiveIntensity:.25})),fG=new T.SphereGeometry(.09,5,4),stG=new T.CylinderGeometry(.012,.012,.22,4).translate(0,.11,0);
 const coinG=new T.CylinderGeometry(.22,.22,.04,14).rotateX(Math.PI/2),coinM=L(0xffc93c,{emissive:0x664400});
 function bush(g,x,z,s,r){const m=foliage[(r()*5)|0];for(const q of[[0,0],[.5,.2],[-.45,.15]]){const b=new T.Mesh(leafG,m);b.position.set(x+q[0]*s,.35*s,z+q[1]*s);b.scale.set(.6*s,.45*s,.6*s);g.add(b)}}
@@ -1054,7 +1057,7 @@ addEventListener('keydown',e=>{if(started&&(e.code==='KeyP'||e.code==='Escape'))
 document.addEventListener('visibilitychange',()=>{if(document.hidden&&started&&!paused)pz(true)});
 $('pz').addEventListener('pointerdown',()=>pz(false));
 // loop
-let s=0,v=0,l=0,lv=0,crank=0,wr=0,wrv=0,skidAcc=0,lastRev=0,cyaw=0,first=true,t=0,last=performance.now(),nextChirp=4;const Rw=.35;
+let s=0,v=0,l=0,lv=0,crank=0,wr=0,wrv=0,skidAcc=0,lastRev=0,cyaw=0,first=true,t=0,last=performance.now(),nextChirp=4;const Rw=.35;let shadowCellX=NaN,shadowCellZ=NaN;
 const camP=V(0,2,6);
 upd(0);
 function loop(now){requestAnimationFrame(loop);
@@ -1070,6 +1073,7 @@ function loop(now){requestAnimationFrame(loop);
  s+=v*dt;const z=-s;
  lv+=(st*(1.1+v*.32)-lv)*Math.min(1,((slip>0||skid)?1.8:6)*dt);l=clamp(l+lv*dt,-5,5);
  const px=cx(z)+l,yaw=Math.atan(dcx(z))-lv*.05;
+ const shadowX=Math.round(px/12)*12,shadowZ=Math.round(z/12)*12;if(shadowX!==shadowCellX||shadowZ!==shadowCellZ){shadowCellX=shadowX;shadowCellZ=shadowZ;sunL.position.set(shadowX-80,26,shadowZ-100);sunL.target.position.set(shadowX,0,shadowZ);R.shadowMap.needsUpdate=true}
  obs(dt,px,z,yaw);crank+=v*1.05*dt;wr+=wrv*dt;
  if(brk&&v>1){skidAcc+=v*dt;if(skidAcc>.09){skidAcc=0;const back=px-Math.sin(yaw)*.6,bz=z-Math.cos(yaw)*.6;burst(back+(Math.random()-.5)*.4,.06,bz,4,0xcdbfa3,3);skidMark(back,bz,yaw);puffRing(back,.08,bz,0xd8cdb5,.2);if(AC&&Math.random()<.85)nz(2800+Math.random()*600,.1,.08,'bandpass',10)}
   shk=Math.max(shk,Math.min(.15,v*.012))}else skidAcc=0;
