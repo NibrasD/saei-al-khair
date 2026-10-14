@@ -79,14 +79,14 @@ const mtEnv=z=>{const u=(((-z)/440)%7+7)%7;return ssm(2.85,3.15,u)*(1-ssm(3.85,4
 const cx=z=>Math.sin(z*.011)*16+Math.sin(z*.027+1.3)*6+Math.sin(z*.0041+.6)*11+mtEnv(z)*Math.sin(z*.052)*8;
 const dcx=z=>.176*Math.cos(z*.011)+.162*Math.cos(z*.027+1.3)+.0451*Math.cos(z*.0041+.6)+mtEnv(z)*.416*Math.cos(z*.052);
 const HZ=0xe9977f;
-const R=new T.WebGLRenderer({antialias:devicePixelRatio<2,powerPreference:'high-performance'});R.setPixelRatio(Math.min(devicePixelRatio,1.5));document.body.prepend(R.domElement);
-const S=new T.Scene();S.background=new T.Color(HZ);S.fog=new T.Fog(HZ,35,230);
+const R=new T.WebGLRenderer({antialias:devicePixelRatio<2,powerPreference:'high-performance'});R.setPixelRatio(Math.min(devicePixelRatio,1.5));R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.08;document.body.prepend(R.domElement);
+const S=new T.Scene();S.background=new T.Color(HZ);S.fog=new T.Fog(HZ,30,250);
 const C=new T.PerspectiveCamera(60,1,.1,700);
 function rs(){R.setSize(innerWidth,innerHeight);C.aspect=innerWidth/innerHeight;C.updateProjectionMatrix()}
 addEventListener('resize',rs);rs();
 
 const hemi=new T.HemisphereLight(0xffc49a,0x5a4a4a,.95);S.add(hemi);
-const sunL=new T.DirectionalLight(0xff9d5c,1.1);sunL.position.set(-80,26,-100);S.add(sunL);
+const sunL=new T.DirectionalLight(0xff9d5c,1.1);sunL.position.set(-80,26,-100);S.add(sunL);\n// Subtle warm bounce and cool sky-fill preserve shape detail without replacing the original lighting cycle.\nconst warmFill=new T.DirectionalLight(0xffd6b4,.18);warmFill.position.set(38,15,24);S.add(warmFill);\nconst skyFill=new T.DirectionalLight(0x879dce,.09);skyFill.position.set(-24,10,35);S.add(skyFill);
 
 function tex(st){const c=document.createElement('canvas');c.width=c.height=64;const g=c.getContext('2d'),gr=g.createRadialGradient(32,32,0,32,32,32);st.forEach(s=>gr.addColorStop(s[0],s[1]));g.fillStyle=gr;g.fillRect(0,0,64,64);return new T.CanvasTexture(c)}
 const glowT=tex([[0,'rgba(255,240,190,1)'],[.25,'rgba(255,200,120,.5)'],[1,'rgba(255,170,90,0)']]);
@@ -259,7 +259,7 @@ function roadTex(kind){return ROADT[kind]||(ROADT[kind]=(()=>{let sd=kind.length
   else if(kind==='gravel'){q.fillStyle='#d9d3c9';q.fillRect(0,0,W,W);speck(5200,['#a39a8e','#c4bcaf','#8c8378','#e8e2d6'],3)}
   else{q.fillStyle='#fff';q.fillRect(0,0,W,W);speck(3200,['rgba(120,100,80,.30)','rgba(255,255,255,.4)','rgba(70,55,40,.28)'],2.4);
    q.fillStyle='rgba(60,45,30,.2)';q.fillRect(W*.27,0,14,W);q.fillRect(W*.67,0,14,W);speck(260,['rgba(150,140,125,.9)'],4)}});
- t.wrapT=T.RepeatWrapping;t.wrapS=T.ClampToEdgeWrapping;t.anisotropy=4;t.encoding=T.LinearEncoding;return t})())}
+ t.wrapT=T.RepeatWrapping;t.wrapS=T.ClampToEdgeWrapping;t.anisotropy=Math.min(8,R.capabilities.getMaxAnisotropy());t.encoding=T.LinearEncoding;return t})())}
 function roadMat(kind){return ROADM[kind]||(ROADM[kind]=L(0xffffff,{vertexColors:true,map:roadTex(kind)}))}
 const ROADK={0:'dirt',1:'cobble',2:'dirt',3:'gravel',4:'coast',5:'stone',6:'city'};
 const curbM=L(0xb9b5aa);
@@ -1040,11 +1040,11 @@ const KF=[
 function skyHour(hr){let i=0;while(i<KF.length-2&&hr>=KF[i+1].h)i++;const a=KF[i],b=KF[i+1],t0=clamp((hr-a.h)/(b.h-a.h),0,1),t=t0*t0*(3-2*t0),L2=(x,y)=>x+(y-x)*t,v3=(k,o)=>o.set(L2(a[k][0],b[k][0]),L2(a[k][1],b[k][1]),L2(a[k][2],b[k][2]));
  const u=sky.material.uniforms;v3('hor',u.hor.value);v3('mid',u.mid.value);v3('top',u.top.value);u.su.value=L2(a.su,b.su);u.sd.value.set(-.55,L2(a.sdY,b.sdY),-.82).normalize();
  const hz=u.hor.value;fcol.setRGB(hz.x,hz.y,hz.z);S.fog.color.copy(fcol);S.background.copy(fcol);
- hemi.intensity=L2(a.hemi,b.hemi);sunL.intensity=L2(a.sun,b.sun);const mt=L2(a.mt,b.mt);mtM.forEach(m=>m.color.copy(m.userData.c0).multiplyScalar(mt));
+ hemi.intensity=L2(a.hemi,b.hemi);sunL.intensity=L2(a.sun,b.sun);warmFill.intensity=.035+L2(a.sun,b.sun)*.15;skyFill.intensity=.025+L2(a.hemi,b.hemi)*.065;const mt=L2(a.mt,b.mt);mtM.forEach(m=>m.color.copy(m.userData.c0).multiplyScalar(mt));
  const cl=L2(a.cl,b.cl);cld.children.forEach(c=>{if(c.material)c.material.opacity=cl});stars.material.opacity=L2(a.st,b.st);lamp.intensity=L2(a.lamp,b.lamp);glowM.opacity=L2(a.glow,b.glow)}
 function dusk(k){const u=sky.material.uniforms;['hor','mid','top'].forEach((n,i)=>u[n].value.lerpVectors(PA[i],PB[i],k));u.su.value=1-k;u.sd.value.set(-.55,.16-.5*k,-.82).normalize();
  const hz=u.hor.value;fcol.setRGB(hz.x,hz.y,hz.z);S.fog.color.copy(fcol);S.background.copy(fcol);
- hemi.intensity=.95-.5*k;sunL.intensity=1.1*(1-k)+.12;mtM.forEach(m=>m.color.copy(m.userData.c0).multiplyScalar(1-.78*k));
+ hemi.intensity=.95-.5*k;sunL.intensity=1.1*(1-k)+.12;warmFill.intensity=.035+.15*(1-k);skyFill.intensity=.025+.065*(.95-.5*k);mtM.forEach(m=>m.color.copy(m.userData.c0).multiplyScalar(1-.78*k));
  cld.children.forEach(c=>{if(c.material)c.material.opacity=.8*(1-.85*k)});stars.material.opacity=clamp(k*1.6-.5,0,1);lamp.intensity=k*1.8;glowM.opacity=.55+.4*k}
 function cluck(){if(!AC)return;const t=AC.currentTime;[0,.09,.17].forEach((dl,i)=>{const o=AC.createOscillator(),e=AC.createGain(),fl=AC.createBiquadFilter();o.type='square';fl.type='bandpass';fl.frequency.value=900+i*130;fl.Q.value=4;o.frequency.setValueAtTime(380,t+dl);o.frequency.exponentialRampToValueAtTime(220,t+dl+.08);e.gain.setValueAtTime(.05,t+dl);e.gain.exponentialRampToValueAtTime(.0001,t+dl+.1);o.connect(fl);fl.connect(e);e.connect(mg);o.start(t+dl);o.stop(t+dl+.12)})}
 function splash(){if(!AC)return;nz(2600,.28,.16,'bandpass',2.2);nz(700,.22,.09,'lowpass',1);const t=AC.currentTime;[1400,1900].forEach((f,i)=>{const s=t+i*.03,o=AC.createOscillator(),e=AC.createGain();o.type='sine';o.frequency.setValueAtTime(f,s);o.frequency.exponentialRampToValueAtTime(f*.6,s+.08);e.gain.setValueAtTime(.05,s);e.gain.exponentialRampToValueAtTime(.0001,s+.1);o.connect(e);e.connect(mg);o.start(s);o.stop(s+.12)})}
