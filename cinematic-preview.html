@@ -17,10 +17,14 @@
 <body>
 <div id="hud"><div class="top"><div class="brand">ساعي الخير <span style="color:#e8bf83">✦</span></div><div class="sub">رحلة صغيرة… وأثر طيب</div></div>
 <div id="help">W / ↑ حركة للأمام<br>A D / ← → توجيه الدراجة<br>E تفاعل · Space الجرس</div>
-<div id="status">تأمّل الغروب… ابدأ رحلتك بالضغط على W</div><button id="interact">اسقِ القطة · E</button>
+<div id="status">تأمّل الغروب… ابدأ رحلتك بالضغط على W</div><div id="boot-error" style="display:none;position:fixed;z-index:9999;left:50%;top:50%;transform:translate(-50%,-50%);width:min(560px,90vw);padding:22px;border-radius:16px;background:#291c20;border:1px solid #ff9b9b;color:#fff;text-align:right;direction:rtl;line-height:1.9;box-shadow:0 20px 80px #0009"><b style="font-size:18px">تعذّر تشغيل المشهد ثلاثي الأبعاد</b><div id="boot-error-detail" style="margin:10px 0;color:#ffd5d5;overflow-wrap:anywhere"></div><div>تأكد من اتصال الإنترنت لأن محرك Three.js يُحمّل من الإنترنت، ثم حدّث الصفحة. إذا استمرت المشكلة، أرسل لي نص الخطأ الظاهر هنا.</div></div><button id="interact">اسقِ القطة · E</button>
 <div id="touch"><button class="touchbtn" data-key="ArrowLeft">←</button><button class="touchbtn" data-key="ArrowUp">↑</button><button class="touchbtn" data-key="ArrowRight">→</button></div></div><div id="fade"></div>
+<script>
+window.addEventListener("error",e=>{const box=document.getElementById("boot-error");if(box){box.style.display="block";document.getElementById("boot-error-detail").textContent=e.message||"تعذّر تحميل ملفات اللعبة."}});
+window.addEventListener("unhandledrejection",e=>{const box=document.getElementById("boot-error");if(box){box.style.display="block";document.getElementById("boot-error-detail").textContent=String(e.reason||"تعذّر تحميل محرك الرسوميات.")}});
+</script>
 <script type="module">
-import * as THREE from 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+import * as THREE from 'https://esm.sh/three@0.160.0';
 const scene=new THREE.Scene();scene.background=new THREE.Color(0xefa879);scene.fog=new THREE.FogExp2(0xb98779,.009);
 const camera=new THREE.PerspectiveCamera(57,innerWidth/innerHeight,.1,500);camera.position.set(0,4.2,10);
 const renderer=new THREE.WebGLRenderer({antialias:true,powerPreference:'high-performance'});renderer.setSize(innerWidth,innerHeight);renderer.setPixelRatio(Math.min(devicePixelRatio,1.8));renderer.shadowMap.enabled=true;renderer.shadowMap.type=THREE.PCFSoftShadowMap;renderer.toneMapping=THREE.ACESFilmicToneMapping;renderer.toneMappingExposure=1.12;renderer.outputColorSpace=THREE.SRGBColorSpace;document.body.appendChild(renderer.domElement);
