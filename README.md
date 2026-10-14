@@ -1,59 +1,36 @@
-# ساعي الخير — Evening Ride 🚲🌅
+# ساعي الخير — Evening Ride
 
-> لعبة استكشاف وهدوء ثلاثية الأبعاد (3D WebGL) تدور حول قيم الإحسان، صلاة الجماعة في أوقاتها، ومساعدة المحتاجين وإطعام وسقيا الحيوانات في أجواء الغروب الهادئة.
+A browser-based 3D cycling game built with Three.js. The existing gameplay, quests, character behaviours, sounds and controls are preserved; the source is now organized into maintainable files.
 
----
+## Run locally
 
-## 🌟 عن المشروع (About the Project)
+Use a local web server so browser requests for the character models work correctly:
 
-**ساعي الخير (Evening Ride)** هي تجربة تفاعلية ثلاثية الأبعاد تعمل مباشرة في المتصفح، تأخذك في جولة بالدراجة وعلى الأقدام في طرقات ريفية هادئة وقت الغروب:
-- 🕌 **أوقات الصلاة والأذان:** متابعة مواقيت الصلاة، والتوقف عند المسجد لأداء الفريضة في وقتها.
-- 🐱 **الإحسان وسقيا الحيوانات:** التوقف لسقيا القطط العطشى ومساعدة الحيوانات على الطريق.
-- 🏃‍♂️ **أنماط متعددة للتجربة:** ركوب الدراجة الهوائية، أو المشي والجري على الأقدام، مع استكشاف مسارات مختلفة.
-- 🎨 **رسوميات ثلاثية الأبعاد متكاملة:** إضاءة غروب شمس دافئة، مجسمات ثلاثية الأبعاد كاملة، ومؤثرات صوتية محيطية هادئة.
-
----
-
-## 🎮 التحكم (Controls)
-
-| الإجراء | لوحة المفاتيح (Keyboard) | شاشات اللمس (Touch) |
-| :--- | :--- | :--- |
-| **التحرك للأمام (بدء الجري / الدواسة)** | `W` أو `↑` | استمرار اللمس على الشاشة |
-| **الفرملة والتوقف** | `S` أو `↓` | رفع الإصبع أو التراجع |
-| **التوجيه (يسار / يمين)** | `A` / `D` أو `←` / `→` | السحب يميناً أو يساراً |
-| **رنين الجرس** | `Space` (المسافة) | زر الجرس على الشاشة |
-| **المساعدة والتفاعل (سقيا / دخول المسجد)** | `E` | زر التفاعل التلقائي |
-| **كتم الصوت** | `M` | زر الصوت |
-| **إيقاف مؤقت** | `P` | زر القائمة |
-
----
-
-## 🚀 كيفية التشغيل محلياً (How to Run Locally)
-
-اللعبة مصممة كملف مستقل بالكامل (Standalone HTML5/WebGL):
-
-### الطريقة 1: الفتح المباشر
-يمكنك فتح ملف `index.html` مباشرة في أي متصفح حديث (Chrome, Edge, Safari, Firefox).
-
-### الطريقة 2: عبر خادم محلي (Local HTTP Server)
 ```bash
-# استخدام بايثون
 python -m http.server 3000
-
-# ثم افتح في المتصفح:
-# http://localhost:3000
 ```
 
----
+Open [http://localhost:3000](http://localhost:3000).
 
-## 🛠️ التقنيات المستخدمة (Tech Stack)
+## Project layout
 
-- **Three.js** (WebGL 3D Rendering Engine)
-- **GLTFLoader & SkeletonUtils** للرسوم والمجسمات الهيكلية ثلاثية الأبعاد.
-- **Web Audio API** للمؤثرات الصوتية الإجرائية (Procedural Sound Design).
-- **HTML5 Canvas / CSS3** للواجهات الخفيفة وسريعة الاستجابة.
+```text
+index.html                  GitHub Pages entry point
+css/game.css                UI and responsive layout
+js/game.js                  Three.js scene, controls, quests and game logic
+assets/models/*.glb         Six existing 3D character models
+.github/workflows/pages.yml Automatic GitHub Pages deployment
+ساعي الخير.html              Alternate entry point to the same game
+```
 
----
+## Controls
 
-## 📜 الترخيص (License)
-هذا المشروع متاح ومفتوح المصدر للاستخدام التعليمي والتطوير الإيجابي.
+- W / ↑: pedal forward
+- S / ↓: brake
+- A / D or ← / →: steer
+- Space: bicycle bell
+- E: interact / help
+- M: mute
+- P / Escape: pause
+
+GitHub Actions is configured to publish the root of `main` to GitHub Pages on every push.
