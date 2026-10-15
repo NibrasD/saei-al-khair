@@ -759,10 +759,10 @@ function addFullHijab(m,kind){const head=m.getObjectByName('head');if(!head||hea
 function walkBodyPose(b,o){setB(b['leg-left'],qX(-(o.lf||0)));setB(b['leg-right'],qX(-(o.rf||0)));const al=(o.al||0)*.52,ar=(o.ar||0)*.52;setB(b['arm-left'],qZ(al).multiply(qX(al*.22)));setB(b['arm-right'],qZ(ar).multiply(qX(ar*.22)));setB(b.torso,qX(o.lean||0).multiply(qY(o.twist||0)).multiply(qZ(o.roll||0)))}
 function setHumanEmotion(target,emotion){
  if(!target)return;const head=target.getObjectByName?target.getObjectByName('head'):null,face=head&&head.userData.face;if(!face)return;
- const name=emotion==='sad'?'sad':emotion==='neutral'?'neutral':'happy';if(face.emotion===name)return;face.emotion=name;
+ const name=emotion==='sad'?'sad':emotion==='neutral'?'neutral':emotion==='laugh'?'laugh':'happy';if(face.emotion===name)return;face.emotion=name;
  face.mouths.forEach(m=>{m.visible=m.name==='mouth-'+name});
- face.brows.forEach((b,i)=>{b.rotation.z=name==='sad'?(i===0?-.34:.34):name==='happy'?(i===0?.08:-.08):0;b.position.y=name==='sad'?.112:name==='happy'?.106:.105});
- face.eyes.forEach(e=>{e.scale.y=name==='sad'?.038:name==='happy'?.041:.047});
+ face.brows.forEach((b,i)=>{b.rotation.z=name==='sad'?(i===0?-.34:.34):name==='happy'?(i===0?.08:-.08):0;b.position.y=name==='sad'?.112:name==='laugh'?.12:name==='happy'?.106:.105});
+ face.eyes.forEach(e=>{e.scale.y=name==='sad'?.038:name==='laugh'?.023:name==='happy'?.041:.047});
 }
 function makeHeldErrandProps(w){
  const hand=w.bones['arm-right'];if(!hand)return;
@@ -833,6 +833,10 @@ function makeFriendlyHuman(kind){
  makeMouth('happy',[[-.064,-.097,.225],[0,-.125,.233],[.064,-.097,.225]]);
  makeMouth('neutral',[[-.06,-.106,.226],[0,-.105,.233],[.06,-.106,.226]]);
  makeMouth('sad',[[-.064,-.125,.225],[0,-.087,.233],[.064,-.125,.225]]);
+ const laugh=new T.Group();laugh.name='mouth-laugh';laugh.visible=false;
+ friendlyBall(laugh,0x5a1d1d,[0,-.112,.235],[.052,.045,.014]);
+ friendlyBall(laugh,0xfff1d8,[0,-.088,.247],[.031,.012,.004]);
+ head.add(laugh);face.mouths.push(laugh);
  head.userData.face=face;
  for(const side of [-1,1]){
   const arm=new T.Group();arm.name=side<0?'arm-left':'arm-right';arm.position.set(side*.235,1.16,0);root.add(arm);
@@ -866,8 +870,8 @@ function npcUpdate(n,dt){const u=n.userData;{const fd=Math.hypot(n.position.x-WK
  else if(u.mode==='wait'){u.wt-=dt;if(u.wt<=0){u.mode='walk';nextNode(u)}walkBodyPose(u.bones,{});posed=true}
   else if(u.mode==='sit'){walkBodyPose(u.bones,{lf:-.9,rf:-.9,lean:.08});posed=true}
  else if(u.mode==='stand'){const b=Math.sin(t*1.25+u.ph);walkBodyPose(u.bones,{lean:.012*b,twist:.018*Math.sin(t*.7+u.ph),al:.025*Math.sin(t*.9+u.ph),ar:.03*Math.cos(t*1.05+u.ph)});posed=true}
- else if(u.mode==='talk'){walkBodyPose(u.bones,{ar:.45+.35*Math.sin(t*2.1+u.ph),al:.2+.2*Math.sin(t*1.7+u.ph*1.3),lean:.03,twist:.07*Math.sin(t*.9+u.ph)});posed=true}
- else if(u.mode==='argue'){walkBodyPose(u.bones,{ar:.9+.5*Math.sin(t*5+u.ph),al:.7+.5*Math.sin(t*4.2+u.ph),lean:.1,twist:.1*Math.sin(t*3+u.ph)});posed=true}
+ else if(u.mode==='talk'){walkBodyPose(u.bones,{ar:.45+.35*Math.sin(t*2.1+u.ph),al:.2+.2*Math.sin(t*1.7+u.ph*1.3),lean:.03,twist:.07*Math.sin(t*.9+u.ph)});setHumanEmotion(n,Math.sin(t*1.7+u.ph)>.72?'laugh':'happy');posed=true}
+ else if(u.mode==='argue'){walkBodyPose(u.bones,{ar:.9+.5*Math.sin(t*5+u.ph),al:.7+.5*Math.sin(t*4.2+u.ph),lean:.1,twist:.1*Math.sin(t*3+u.ph)});setHumanEmotion(n,'sad');posed=true}
  else if(u.mode==='run'){if(Math.hypot(WK.x-n.position.x,WK.z-n.position.z)<1.7){walkBodyPose(u.bones,{});posed=true}else{u.a+=dt*u.w;const sx=WK.world.sx,sz=WK.world.sz;n.position.set(sx+Math.cos(u.a)*u.r,WALK_Y,sz+Math.sin(u.a)*u.r);n.rotation.y=Math.atan2(-Math.sin(u.a),Math.cos(u.a))*(u.w>0?1:-1);u.ph+=dt*11;walkBodyPose(u.bones,walkOff(u.ph,.5));posed=true}}
  if(u.waveAmt>.01){if(!posed)walkBodyPose(u.bones,{});u.waveBone.quaternion.multiply(qZ(-(1.9+Math.sin(t*8)*.32)*u.waveAmt))}}
 function showDlg(ar,en,ch){menuOpen=true;menuMode='dlg';WK.dlg=ch;$menu.innerHTML='<div class="walk-dialog" dir="rtl"><span>'+ar+'</span>'+ch.map((c,i)=>'<button data-i="'+i+'">'+c.t+'</button>').join('')+'</div>';$menu.style.display='flex'}
