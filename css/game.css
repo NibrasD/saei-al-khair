@@ -77,3 +77,42 @@ body.walk-mode #keys{max-width:min(52vw,520px);line-height:1.5}
  body.walk-mode #act{bottom:calc(15px + env(safe-area-inset-bottom,0px));padding:9px 14px;font-size:13px}
  body.walk-mode #toast{top:25%;font-size:15px}
 }
+
+/* Clear, Arabic-first walking HUD inspired by polished game objective panels. */
+body.walk-mode{font-family:Tahoma,Arial,sans-serif}
+body.walk-mode #mis{top:calc(16px + env(safe-area-inset-top,0px));left:16px;width:min(430px,42vw);max-width:min(430px,42vw);box-sizing:border-box;padding:14px 17px;border:1px solid rgba(247,207,118,.62);border-radius:15px;background:linear-gradient(145deg,rgba(23,29,31,.94),rgba(27,27,27,.88));box-shadow:0 10px 34px rgba(0,0,0,.34),inset 0 1px rgba(255,255,255,.06);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);direction:rtl;text-align:right;line-height:1.85;text-shadow:0 2px 3px rgba(0,0,0,.8);font-size:17px;color:#fff8e9}
+body.walk-mode #mis b{display:block;margin:0 0 7px;padding-bottom:5px;border-bottom:1px solid rgba(247,207,118,.24);font-size:18px;font-weight:700;color:#ffdc8a;line-height:1.5}
+body.walk-mode #mis .mission-copy{display:block;font-size:17px;font-weight:600;line-height:1.9;color:#fffdf7;overflow-wrap:anywhere}
+body.walk-mode #goals{top:calc(144px + env(safe-area-inset-top,0px));right:16px;max-width:min(280px,31vw);box-sizing:border-box;padding:11px 14px;border:1px solid rgba(232,232,214,.25);border-radius:13px;background:rgba(22,28,28,.88);box-shadow:0 8px 26px rgba(0,0,0,.28);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);direction:rtl;text-align:right;font-size:13px;line-height:1.9;color:#f7f4e9}
+body.walk-mode #goals b{display:block;font-size:15px;color:#e7d7a6;margin-bottom:4px}
+body.walk-mode #act{max-width:min(92vw,600px);padding:13px 23px;border:1px solid #f0d18a;border-radius:14px;background:rgba(23,29,30,.96);box-shadow:0 8px 25px rgba(0,0,0,.42);color:#fff8e7;font:700 17px Tahoma,Arial,sans-serif;line-height:1.5;white-space:normal;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+body.walk-mode #toast{top:24%;max-width:min(86vw,640px);padding:10px 17px;border:1px solid rgba(247,207,118,.3);border-radius:12px;background:rgba(20,25,26,.82);color:#fff8e9;font:600 clamp(16px,2vw,21px) Tahoma,Arial,sans-serif;line-height:1.8;box-shadow:0 8px 24px rgba(0,0,0,.2);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+body.walk-mode #clk{background:rgba(20,27,29,.88);border:1px solid rgba(255,255,255,.15);font-family:Tahoma,Arial,sans-serif;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px)}
+body.walk-mode #clkT{font-size:26px;letter-spacing:.04em}
+body.walk-mode #clkP{font-size:12px;line-height:1.7}
+body.walk-mode #hud{direction:rtl;text-align:right;font-family:Tahoma,Arial,sans-serif;font-weight:700;background:rgba(20,27,29,.82);border:1px solid rgba(255,255,255,.12);padding:8px 12px;border-radius:12px}
+body.walk-mode #map{width:174px;height:174px;left:16px;bottom:78px;border:2px solid rgba(245,220,160,.8);box-shadow:0 5px 18px rgba(0,0,0,.4)}
+body.walk-mode #keys{max-width:min(54vw,570px);font:12px/1.7 Tahoma,Arial,sans-serif;text-shadow:0 2px 5px #000}
+body.walk-mode #menu{background:rgba(9,14,16,.78);backdrop-filter:blur(7px);-webkit-backdrop-filter:blur(7px)}
+body.walk-mode #menu .walk-dialog{display:flex;flex-direction:column;gap:13px;width:min(560px,88vw);min-width:0;box-sizing:border-box;padding:25px 25px 22px;border:1px solid rgba(247,207,118,.65);border-radius:20px;background:linear-gradient(150deg,rgba(31,40,40,.99),rgba(21,27,29,.98));box-shadow:0 18px 70px rgba(0,0,0,.5);text-align:center;font-family:Tahoma,Arial,sans-serif}
+body.walk-mode #menu .walk-dialog span{display:block;font-size:clamp(18px,2.3vw,24px);line-height:1.95;font-weight:700;color:#fff8e9}
+body.walk-mode #menu .walk-dialog button{padding:13px 16px;border:1px solid rgba(243,217,160,.52);border-radius:12px;background:rgba(255,255,255,.04);color:#fff8e9;font:600 16px/1.6 Tahoma,Arial,sans-serif;text-align:center}
+body.walk-mode #menu .walk-dialog button:active{background:rgba(244,207,120,.2)}
+@media(max-width:700px){
+ body.walk-mode #mis{top:calc(8px + env(safe-area-inset-top,0px));left:8px;width:min(56vw,320px);max-width:56vw;padding:9px 11px;border-radius:11px;font-size:13px;line-height:1.7}
+ body.walk-mode #mis b{font-size:14px;margin-bottom:4px}
+ body.walk-mode #mis .mission-copy{font-size:13px;line-height:1.75}
+ body.walk-mode #goals{top:calc(127px + env(safe-area-inset-top,0px));right:8px;max-width:42vw;padding:7px 9px;font-size:10px;line-height:1.7}
+ body.walk-mode #goals b{font-size:11px}
+ body.walk-mode #clk{top:calc(8px + env(safe-area-inset-top,0px));right:8px;min-width:105px;padding:5px 7px}
+ body.walk-mode #clkT{font-size:22px}
+ body.walk-mode #clkP,body.walk-mode #clkB{font-size:10px!important}
+ body.walk-mode #map{width:124px;height:124px;left:8px;bottom:64px}
+ body.walk-mode #keys{left:8px;bottom:6px;max-width:58vw;font-size:10px}
+ body.walk-mode #hud{right:8px;bottom:calc(8px + env(safe-area-inset-bottom,0px));font-size:12px;padding:5px 8px}
+ body.walk-mode #act{bottom:calc(11px + env(safe-area-inset-bottom,0px));max-width:88vw;padding:9px 13px;font-size:13px}
+ body.walk-mode #toast{top:25%;max-width:88vw;padding:8px 12px;font-size:14px}
+ body.walk-mode #menu .walk-dialog{padding:18px 15px;border-radius:16px;gap:10px}
+ body.walk-mode #menu .walk-dialog span{font-size:18px}
+ body.walk-mode #menu .walk-dialog button{padding:11px 10px;font-size:14px}
+}
