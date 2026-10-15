@@ -883,7 +883,7 @@ function confessChoice(i){menuOpen=false;$menu.style.display='none';$menu.innerH
  else{say('The neighbor looks a little sad and walks back inside. No one saw... but you did.')}
  clr();mi=pickNext();spawn()}
 $menu.addEventListener('click',e=>{const i=e.target.dataset.i;if(i==null)return;if(menuMode==='confess')confessChoice(+i);else if(menuMode==='call')callChoice(+i);else if(menuMode==='fam')famChoice(+i);else if(menuMode==='fast')fastChoice(+i);else if(menuMode==='quiz')quizChoice(+i);else if(menuMode==='pm')pmChoice(+i);else if(menuMode==='dlg')dlgChoice(+i);else buy(+i)});
-addEventListener('keydown',e=>{if(menuOpen&&/^Digit[123]$/.test(e.code))buy(+e.code[5]-1)});
+addEventListener('keydown',e=>{if(!menuOpen||!/^Digit[123]$/.test(e.code))return;const i=Number(e.code.slice(-1))-1,btn=$menu.querySelector('button[data-i="'+i+'"]');if(btn){e.preventDefault();btn.click()}});
 function mis(dt){
  if(!started)return;
  if(msgT>0&&(msgT-=dt)<=0)$t.style.opacity=0;
