@@ -654,7 +654,7 @@ function stallProp(col,goods){const g=new T.Group(),wd=L(0x8a5a36),aw=L(col),gd=
 function benchAt(g,x,z,ry){const o=new T.Group(),seat=new T.Mesh(new T.BoxGeometry(1.5,.08,.5),benchWood),back=new T.Mesh(new T.BoxGeometry(1.5,.5,.06),benchWood);seat.position.y=.46;back.position.set(0,.74,.22);o.add(seat,back);
  [-.65,.65].forEach(px=>{const l=new T.Mesh(new T.BoxGeometry(.06,.46,.46),benchMetal);l.position.set(px,.23,0);o.add(l)});o.position.set(x,0,z);o.rotation.y=ry;g.add(o)}
 function palm(g,x,z,hh){const t=new T.Mesh(new T.CylinderGeometry(.18,.3,hh,7),palmT);t.position.set(x,hh/2,z);g.add(t);for(let i=0;i<7;i++){const a=i/7*Math.PI*2,l=new T.Mesh(new T.BoxGeometry(.35,.06,2.8),palmL);l.position.set(x+Math.sin(a)*1.1,hh+.1,z+Math.cos(a)*1.1);l.rotation.y=a;l.rotation.x=-.5;g.add(l)}}
-function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(),stalls=[],awC=[0xc8352f,0x2f7fd6,0xf2c230,0x2f9a5a,0xe07a2f];
+function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(),stalls=[],awC=[0xc8352f,0x2f7fd6,0xf2c230,0x2f9a5a,0xe07a2f];const awningMats=awC.map(c=>L(c)),awningLight=L(0xf2e5ce);
  const stoneT=cv(256,256,q=>{q.fillStyle='#cdbb98';q.fillRect(0,0,256,256);for(let r=0;r<16;r++)for(let c=0;c<9;c++){const sh=186+((r*13+c*7)%34);q.fillStyle='rgb('+sh+','+(sh-18)+','+(sh-44)+')';q.fillRect(c*32-(r%2?16:0)+1,r*16+1,30,14)}});stoneT.wrapS=stoneT.wrapT=T.RepeatWrapping;stoneT.repeat.set(50,50);
  const gp=new T.Mesh(new T.PlaneGeometry(210,210,1,8).rotateX(-Math.PI/2),L(0xffffff,{map:stoneT}));gp.position.set(0,.03,WZ);g.add(gp);
  const asT=cv(256,512,q=>{const gr=q.createLinearGradient(0,0,256,512);gr.addColorStop(0,'#34353a');gr.addColorStop(.5,'#2a2b2f');gr.addColorStop(1,'#38393e');q.fillStyle=gr;q.fillRect(0,0,256,512);
@@ -677,13 +677,13 @@ function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(
   const h=new T.Mesh(new T.BoxGeometry(.34,.035,6.9),zebM);h.position.set(LN[a]+side*(5.1+k*.5),.064,NZ[b]);g.add(h)
  }
  const car=(x,z,alongZ,col)=>{const o=new T.Group(),bd=new T.Mesh(new T.BoxGeometry(1.8,.8,4.2),L(col)),cb=new T.Mesh(new T.BoxGeometry(1.6,.7,2.3),cabM);bd.position.y=.7;cb.position.set(0,1.45,-.2);o.add(bd,cb);[[-.95,1.3],[.95,1.3],[-.95,-1.3],[.95,-1.3]].forEach(p=>{const w=new T.Mesh(new T.BoxGeometry(.25,.6,.6),tireM);w.position.set(p[0],.3,p[1]);o.add(w)});o.position.set(x,0,z);o.rotation.y=alongZ?0:Math.PI/2;g.add(o);rects.push(alongZ?{x0:x-1,x1:x+1,z0:z-2.2,z1:z+2.2}:{x0:x-2.2,x1:x+2.2,z0:z-1,z1:z+1})};
- const facadeTrim=L(0xe7d8bc),facadeBase=L(0x806a59);const mkB=(cx,cz,bw,bd)=>{const hh=8+rnd()*7,face=fm[(rnd()*fm.length)|0],m=new T.Mesh(new T.BoxGeometry(bw,hh,bd),[face,face,roofM,roofM,face,face]);m.position.set(cx,hh/2,cz);g.add(m);
+ const facadeTrim=L(0xe7d8bc),facadeBase=L(0x806a59);const mkB=(cx,cz,bw,bd)=>{const hh=8+rnd()*7,face=fm[(rnd()*fm.length)|0],m=new T.Mesh(new T.BoxGeometry(bw,hh,bd),face);m.position.set(cx,hh/2,cz);g.add(m);
   const plinth=new T.Mesh(new T.BoxGeometry(bw+.12,.34,bd+.12),facadeBase);plinth.position.set(cx,.17,cz);g.add(plinth);
   const cornice=new T.Mesh(new T.BoxGeometry(bw+.24,.17,bd+.24),facadeTrim);cornice.position.set(cx,hh-.18,cz);g.add(cornice);
   const roof=new T.Mesh(new T.BoxGeometry(bw+.3,.16,bd+.3),roofM);roof.position.set(cx,hh+.015,cz);g.add(roof);
   rects.push({x0:cx-bw/2,x1:cx+bw/2,z0:cz-bd/2,z1:cz+bd/2})};
- const shop=(fx,fz,nx,nz)=>{const col=awC[(rnd()*awC.length)|0],aw=new T.Mesh(new T.BoxGeometry(nx?1.7:6.6,.12,nx?6.6:1.7),L(col));aw.position.set(fx+nx*.85,3.3,fz+nz*.85);g.add(aw);
-  for(let stripe=0;stripe<7;stripe++){const pale=stripe%2===0,sw=new T.Mesh(new T.BoxGeometry(nx?.14:.88,.28,nx?.88:.14),L(pale?0xf2e5ce:col));sw.position.set(nx?fx+nx*1.7:fx-3.08+(stripe+.5)*6.16/7,3.12,nx?fz-3.08+(stripe+.5)*6.16/7:fz+nz*1.7);g.add(sw)}
+ const shop=(fx,fz,nx,nz)=>{const ci=(rnd()*awC.length)|0,col=awC[ci],aw=new T.Mesh(new T.BoxGeometry(nx?1.7:6.6,.12,nx?6.6:1.7),awningMats[ci]);aw.position.set(fx+nx*.85,3.3,fz+nz*.85);g.add(aw);
+  for(let stripe=0;stripe<7;stripe++){const pale=stripe%2===0,sw=new T.Mesh(new T.BoxGeometry(nx?.14:.88,.28,nx?.88:.14),pale?awningLight:awningMats[ci]);sw.position.set(nx?fx+nx*1.7:fx-3.08+(stripe+.5)*6.16/7,3.12,nx?fz-3.08+(stripe+.5)*6.16/7:fz+nz*1.7);g.add(sw)}
   const sg=new T.Mesh(new T.PlaneGeometry(4,.9),signM[(rnd()*6)|0]);sg.position.set(fx+nx*.07,4.3,fz+nz*.07);sg.rotation.y=Math.atan2(nx,nz);g.add(sg);
   if(rnd()<.35){const st=stallProp(col,[0xd94b3d,0xf2c230,0x6bbf59,0xe8a24a]);st.position.set(fx+nx*1.3,0,fz+nz*1.3);st.rotation.y=Math.atan2(-nx,-nz);g.add(st);stalls.push({vx:fx+nx*.4,vz:fz+nz*.4,nx,nz})}};
  for(let i=0;i<4;i++)for(let j=0;j<4;j++){const x0=LN[i]+6,x1=LN[i+1]-6,z0=NZ[j]+6,z1=NZ[j+1]-6,xm=(x0+x1)/2,zm=(z0+z1)/2;
