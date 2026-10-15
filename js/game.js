@@ -330,6 +330,7 @@ function greyTint(g){g.scene.traverse(o=>{if(!o.isMesh)return;const m=o.material
  m.onBeforeCompile=sh=>{sh.vertexShader=sh.vertexShader.replace('#include <common>','#include <common>\nvarying vec3 vLP;').replace('#include <begin_vertex>','#include <begin_vertex>\nvLP=position;');
   sh.fragmentShader=sh.fragmentShader.replace('#include <common>','#include <common>\nvarying vec3 vLP;').replace('#include <map_fragment>','#include <map_fragment>\n float mk=max(step(.535,vLP.y),step(.25,vLP.y)*step(vLP.y,.455)*step(.09,vLP.z));float lum=dot(diffuseColor.rgb,vec3(.3,.5,.2));diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.84,.85,.88)*(.5+.5*lum),mk);float tr=step(.045,vLP.y)*step(vLP.y,.218);diffuseColor.rgb=mix(diffuseColor.rgb,vec3(.2,.22,.28)*(.65+.5*lum),tr);')}})}
 function fixModel(g){g.scene.traverse(o=>{if(o.isMesh){o.frustumCulled=false;(Array.isArray(o.material)?o.material:[o.material]).forEach(m=>{if(m.map){m.map.encoding=T.LinearEncoding;m.map.needsUpdate=true}if(CAT_COL[m.name]!==undefined){m.color.setHex(CAT_COL[m.name]);m.flatShading=true;m.needsUpdate=true}m.roughness=1;m.metalness=0})}})}
+function tuneWalkModel(root){root.traverse(o=>{if(!o.isMesh||!o.material)return;const tune=m=>{const c=m.clone();if(c.map){c.map=c.map.clone();c.map.encoding=T.sRGBEncoding;c.map.needsUpdate=true}if(c.emissiveMap){c.emissiveMap=c.emissiveMap.clone();c.emissiveMap.encoding=T.sRGBEncoding;c.emissiveMap.needsUpdate=true}if('roughness'in c)c.roughness=Math.max(c.roughness||.65,.78);if('metalness'in c)c.metalness=0;c.needsUpdate=true;return c};o.material=Array.isArray(o.material)?o.material.map(tune):tune(o.material)})}
 async function loadReal(){
  if(!(T.GLTFLoader&&T.SkeletonUtils))return;
  const ld=new T.GLTFLoader();
@@ -414,7 +415,7 @@ function boyPose(R_,walking,dt){let o;
 loadReal();
 function catPlay(u,n){if(!u||!u.acts)return;u.eatTarget=(n==='eat')?1:0}
 function mkCat(){if(!REAL.cat)return mkCatPrim();
- const g=new T.Group(),m=T.SkeletonUtils.clone(REAL.cat.scene);m.scale.setScalar(CAT_S);m.rotation.y=Math.PI/2;g.add(m);
+ const g=new T.Group(),m=T.SkeletonUtils.clone(REAL.cat.scene);if(walkMode)tuneWalkModel(m);m.scale.setScalar(CAT_S);m.rotation.y=Math.PI/2;g.add(m);
  const bowl=new T.Mesh(new T.CylinderGeometry(.17,.12,.09,10),L(0x4a6fa5)),wat=new T.Mesh(new T.CircleGeometry(.14,10).rotateX(-Math.PI/2),new T.MeshBasicMaterial({color:0x9fdcff}));
  bowl.scale.set(1.3,1.3,1.3);wat.scale.setScalar(.01);bowl.position.set(0,.06,-.62);wat.position.set(0,.12,-.62);g.add(bowl,wat);
  const mixer=new T.AnimationMixer(m),acts={};REAL.cat.animations.forEach(c=>{acts[c.name]=mixer.clipAction(c)});
@@ -642,7 +643,7 @@ function facMats(){if(facM)return facM;
   q.fillStyle='#554236';q.fillRect(95,414,66,98);q.fillStyle='#dbc9a9';q.fillRect(100,419,56,93);q.fillStyle='#5a7b83';q.fillRect(106,425,44,45);q.fillStyle='rgba(255,255,255,.45)';q.fillRect(110,429,5,36);q.fillStyle='#b89b70';q.fillRect(106,476,44,36);q.fillStyle='#513829';q.fillRect(139,491,4,4);
   q.fillStyle='rgba(70,45,35,.2)';for(let i=0;i<1800;i++){const x=(i*37+n*19)%256,y=(i*97+n*29)%512;q.fillRect(x,y,1+(i%3),1)}
   q.fillStyle='#eee0c7';q.fillRect(0,4,256,10);q.fillStyle='rgba(68,47,36,.3)';q.fillRect(0,500,256,12);
- });t.anisotropy=Math.min(8,R.capabilities.getMaxAnisotropy());return L(0xffffff,{map:t})});return facM}
+ });t.encoding=T.sRGBEncoding;t.needsUpdate=true;t.anisotropy=Math.min(8,R.capabilities.getMaxAnisotropy());return L(0xffffff,{map:t})});return facM}
 const palmT=L(0x8a6a3e),palmL=L(0x3f8a45),binM=L(0x2f6b3a),bagM=[L(0xc8352f),L(0x2f7fd6)];
 function doorProp(){const g=new T.Group(),dm=L(0x5a3a22),aw=L(0xc8352f),wh=L(0xf1ede2),WN=new T.MeshBasicMaterial({color:0xffd98a});
  const add=(m,x,y,zz)=>{m.position.set(x,y,zz);g.add(m);return m};
@@ -655,15 +656,15 @@ function benchAt(g,x,z,ry){const o=new T.Group(),seat=new T.Mesh(new T.BoxGeomet
  [-.65,.65].forEach(px=>{const l=new T.Mesh(new T.BoxGeometry(.06,.46,.46),benchMetal);l.position.set(px,.23,0);o.add(l)});o.position.set(x,0,z);o.rotation.y=ry;g.add(o)}
 function palm(g,x,z,hh){const t=new T.Mesh(new T.CylinderGeometry(.18,.3,hh,7),palmT);t.position.set(x,hh/2,z);g.add(t);for(let i=0;i<7;i++){const a=i/7*Math.PI*2,l=new T.Mesh(new T.BoxGeometry(.35,.06,2.8),palmL);l.position.set(x+Math.sin(a)*1.1,hh+.1,z+Math.cos(a)*1.1);l.rotation.y=a;l.rotation.x=-.5;g.add(l)}}
 function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(),stalls=[],awC=[0xc8352f,0x2f7fd6,0xf2c230,0x2f9a5a,0xe07a2f];const awningMats=awC.map(c=>L(c)),awningLight=L(0xf2e5ce);
- const stoneT=cv(256,256,q=>{q.fillStyle='#cdbb98';q.fillRect(0,0,256,256);for(let r=0;r<16;r++)for(let c=0;c<9;c++){const sh=186+((r*13+c*7)%34);q.fillStyle='rgb('+sh+','+(sh-18)+','+(sh-44)+')';q.fillRect(c*32-(r%2?16:0)+1,r*16+1,30,14)}});stoneT.wrapS=stoneT.wrapT=T.RepeatWrapping;stoneT.repeat.set(50,50);
+ const stoneT=cv(256,256,q=>{q.fillStyle='#cdbb98';q.fillRect(0,0,256,256);for(let r=0;r<16;r++)for(let c=0;c<9;c++){const sh=186+((r*13+c*7)%34);q.fillStyle='rgb('+sh+','+(sh-18)+','+(sh-44)+')';q.fillRect(c*32-(r%2?16:0)+1,r*16+1,30,14)}});stoneT.encoding=T.sRGBEncoding;stoneT.needsUpdate=true;stoneT.wrapS=stoneT.wrapT=T.RepeatWrapping;stoneT.repeat.set(50,50);
  const gp=new T.Mesh(new T.PlaneGeometry(210,210,1,8).rotateX(-Math.PI/2),L(0xffffff,{map:stoneT}));gp.position.set(0,.03,WZ);g.add(gp);
  const asT=cv(256,512,q=>{const gr=q.createLinearGradient(0,0,256,512);gr.addColorStop(0,'#34353a');gr.addColorStop(.5,'#2a2b2f');gr.addColorStop(1,'#38393e');q.fillStyle=gr;q.fillRect(0,0,256,512);
   for(let i=0;i<14500;i++){const x=(i*73+Math.floor(i/17)*19)%256,y=(i*151+Math.floor(i/23)*31)%512,v=(i%5===0)?'#45464b':(i%3===0?'#202126':'#303136');q.fillStyle=v;q.globalAlpha=.22+(i%4)*.09;q.fillRect(x,y,1+(i%3),1+(i%2))}
   q.globalAlpha=1;for(let p=0;p<10;p++){const x=(p*67+23)%256,y=(p*113+37)%512;q.fillStyle='rgba(12,12,14,.17)';q.fillRect(x,y,18+p%5,12+p%4);q.fillStyle='rgba(110,110,110,.08)';q.fillRect(x+2,y+2,10,1)}
   q.strokeStyle='rgba(12,12,14,.5)';q.lineWidth=1;for(let c=0;c<9;c++){let x=(c*29+13)%256,y=(c*53+22)%512;q.beginPath();q.moveTo(x,y);for(let k=0;k<5;k++){x+=(c%2?1:-1)*(2+(k%3));y+=3+k%2;q.lineTo(x,y)}q.stroke()}
- });asT.wrapS=asT.wrapT=T.RepeatWrapping;asT.repeat.set(1,19);asT.anisotropy=Math.min(8,R.capabilities.getMaxAnisotropy());
+ });asT.encoding=T.sRGBEncoding;asT.needsUpdate=true;asT.wrapS=asT.wrapT=T.RepeatWrapping;asT.repeat.set(1,19);asT.anisotropy=Math.min(8,R.capabilities.getMaxAnisotropy());
  const asM=L(0xffffff,{map:asT}),SWM=L(0xcfc6b2),CURB=L(0xb9b5aa),jointM=L(0x918879),zebM=new T.MeshBasicMaterial({color:0xf4f1e8}),laneWhite=new T.MeshBasicMaterial({color:0xded8c9}),laneGold=new T.MeshBasicMaterial({color:0xe0bf74}),carCols=[0xc0392b,0x2980b9,0xecf0f1,0x27ae60,0xf1c40f,0x7f8c8d],tireM=L(0x1e1e22),cabM=L(0x9fc4d8);
- const signNames=['مخبز','صيدلية','بقالة','حلويات','مكتبة','عطارة'],signM=signNames.map((nm,k)=>new T.MeshBasicMaterial({map:cv(256,56,q=>{q.fillStyle=['#8a2b22','#1f5f8a','#2c7a45','#a0428a','#6b4a2a','#2c6b6b'][k];q.fillRect(0,0,256,56);q.fillStyle='#fff';q.strokeStyle='#e9c46a';q.lineWidth=3;q.strokeRect(4,4,248,48);q.font='bold 36px sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillText(nm,128,30)})}));
+ const signNames=['مخبز','صيدلية','بقالة','حلويات','مكتبة','عطارة'],signM=signNames.map((nm,k)=>new T.MeshBasicMaterial({map:cv(256,56,q=>{q.fillStyle=['#8a2b22','#1f5f8a','#2c7a45','#a0428a','#6b4a2a','#2c6b6b'][k];q.fillRect(0,0,256,56);q.fillStyle='#fff';q.strokeStyle='#e9c46a';q.lineWidth=3;q.strokeRect(4,4,248,48);q.font='bold 36px sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillText(nm,128,30)})}));signM.forEach(m=>{if(m.map){m.map.encoding=T.sRGBEncoding;m.map.needsUpdate=true}});
  for(let a=0;a<5;a++){const ns=new T.Mesh(new T.PlaneGeometry(8,156,1,6).rotateX(-Math.PI/2),asM);ns.position.set(LN[a],.04,WZ);g.add(ns);const ew=new T.Mesh(new T.PlaneGeometry(8,156,1,6).rotateX(-Math.PI/2).rotateY(Math.PI/2),asM);ew.position.set(0,.045,NZ[a]);g.add(ew)}
  // On-foot road markings: lane edges, broken centre lines and zebra crossings at the inner junctions.
  for(let a=0;a<5;a++){
@@ -723,8 +724,8 @@ let npcShadowTex=null,npcShadowGeo=null,npcShadowMat=null;
 function npcGroundShadow(scale=1){if(!npcShadowTex){npcShadowTex=cv(128,128,q=>{const gr=q.createRadialGradient(64,64,3,64,64,63);gr.addColorStop(0,'rgba(14,12,12,.48)');gr.addColorStop(.35,'rgba(18,15,15,.28)');gr.addColorStop(1,'rgba(18,15,15,0)');q.fillStyle=gr;q.fillRect(0,0,128,128)});npcShadowGeo=new T.PlaneGeometry(1.15,1.55).rotateX(-Math.PI/2);npcShadowMat=new T.MeshBasicMaterial({map:npcShadowTex,transparent:true,opacity:.58,depthWrite:false,toneMapped:false,polygonOffset:true,polygonOffsetFactor:-2})}
  const sh=new T.Mesh(npcShadowGeo,npcShadowMat);sh.position.y=.035;sh.scale.set(scale,scale,1);sh.renderOrder=2;return sh}
 function mkNPC(kind,tint,pose){const src=REAL[kind];if(!src)return null;const g=new T.Group(),m=T.SkeletonUtils.clone(src.scene),sc={owner:1.55,medic:1.55,elder:1.6,kid:1.2,boy:1.45}[kind]*(.94+Math.random()*.12);m.scale.setScalar(sc);
- // Preserve artist-created colors instead of tinting skin, hair and clothing randomly.
- if(tint&&kind!=='elder'&&walkMode)m.traverse(o=>{if(!o.isMesh||!o.material)return;const tune=a=>{const c=a.clone();if(c.map)c.color.set(0xffffff);if('roughness'in c)c.roughness=Math.max(c.roughness||.65,.82);if('metalness'in c)c.metalness=0;return c};o.material=Array.isArray(o.material)?o.material.map(tune):tune(o.material)});
+ // Retain each model's authored colors while using display-correct color textures in the walking scene.
+ if(walkMode)tuneWalkModel(m);
  if(walkMode)g.add(npcGroundShadow(.9+sc*.18));g.add(m);
  const mixer=new T.AnimationMixer(m),clip=src.animations.find(a=>a.name===(pose||'idle'));if(clip){const a=mixer.clipAction(clip);a.play();a.paused=true;mixer.update(.016)}
  m.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=false}});
@@ -765,10 +766,13 @@ function evArgue(it){const ev=it.ev;if(ev.done)return say('The two neighbors sha
  showDlg('رجلان يتجادلان بصوت عالٍ…','Two neighbors are arguing loudly over a small matter.',[{t:'السلام عليكم… هلّا هدأتما؟ 🕊',fn:()=>{ev.done=true;ev.npcs.forEach(n=>{n.userData.mode='stand';n.userData.waveTarget=1;n.userData.waveT=3});SV.peace=(SV.peace||0)+1;pay(30,'«فَاتَّقُوا اللَّهَ وَأَصْلِحُوا ذَاتَ بَيْنِكُمْ» (الأنفال ١)   \u2066+¥30\u2069')}},{t:'أصرخ عليهما',fn:()=>say('Shouting only makes it worse. Try calm words.')},{t:'أمضي في طريقي',fn:()=>{}}])}
 function startPrayerWalk(){const w=WK;w.pray={t:0,k:pCur};w.boy.visible=false;$('pray').style.display='flex'}
 const ERR=[{id:'baker',ar:'الخبّاز',itemAr:'خبزًا للعشاء',en:'bread',cost:25,kind:'elder',col:0xe07a2f,sx:4.9,zl:-20,rot:Math.PI/2,vx:5.7,ix:3.4},{id:'grocer',ar:'البقّال',itemAr:'خضارًا للغداء',en:'vegetables',cost:40,kind:'owner',col:0x2f9a5a,sx:-40.9,zl:40,rot:-Math.PI/2,vx:-41.7,ix:-38.6},{id:'pharm',ar:'الصيدلي',itemAr:'دواءً لأختك',en:'medicine for your sister',cost:60,kind:'medic',col:0x2f7fd6,sx:40.9,zl:-20,rot:Math.PI/2,vx:41.7,ix:38.6},{id:'books',ar:'صاحب المكتبة',itemAr:'دفترًا لأختك',en:'a notebook for your sister',cost:15,kind:'elder',col:0xf2c230,sx:-4.9,zl:-50,rot:-Math.PI/2,vx:-5.7,ix:-2.6}];
-function updQuest(){const w=WK,e=ERR[w.err],Q=w.q===0?['Mom\'s errand','Talk to Mom at the door of your home.']:w.q===1?['Buy '+e.en,'Go to the shop marked on the map and buy '+e.en+'.']:['Bring it home','Take the '+e.en+' back to Mom.'];setH($m,'<b>'+Q[0]+'</b><br>'+Q[1])}
+function activeWalkObjective(w=WK){if(!w)return null;const id=w.q===1?ERR[w.err].id:'mom';return w.items.find(i=>i.id===id)||null}
+function makeWalkGoalMarker(){const g=new T.Group(),gold=new T.MeshBasicMaterial({color:0xffd166,transparent:true,opacity:.96,depthWrite:false,toneMapped:false}),beamM=new T.MeshBasicMaterial({color:0xffd166,transparent:true,opacity:.16,depthWrite:false,side:T.DoubleSide,toneMapped:false}),ring=new T.Mesh(new T.TorusGeometry(.78,.075,8,28),gold.clone()),beam=new T.Mesh(new T.CylinderGeometry(.09,.34,2.35,10,1,true),beamM),cap=new T.Mesh(new T.OctahedronGeometry(.22),gold.clone());ring.rotation.x=Math.PI/2;ring.position.y=.08;beam.position.y=1.25;cap.position.y=2.6;g.add(beam,ring,cap);g.userData={ring,beam,cap};return g}
+function updateWalkGoalMarker(w,dt){const m=w&&w.goalMarker,o=activeWalkObjective(w);if(!m)return;if(!o){m.visible=false;return}m.visible=true;m.position.set(o.x,0,o.z);const d=Math.hypot(w.x-o.x,w.z-o.z),p=.88+.14*Math.sin(t*2.8);m.userData.ring.scale.setScalar(p);m.userData.cap.position.y=2.55+.16*Math.sin(t*3.2);m.userData.ring.material.opacity=d<2.8?.22:.96;m.userData.beam.material.opacity=d<5?.035:.16;m.userData.cap.material.opacity=d<2.8?.28:.96}
+function updQuest(){const w=WK;if(!w)return;const e=ERR[w.err],step=w.q===0?1:w.q===1?2:3;let ar,en;if(w.q===0){ar='تحدّث مع أمك عند باب المنزل لتعرف ما تحتاجه الأسرة.';en='Talk to Mom at the front door to get the family errand.'}else if(w.q===1){ar='اشترِ '+e.itemAr+' من '+e.ar+' ثم عُد به إلى المنزل.';en='Buy '+e.en+' from the marked shop, then return home.'}else{ar='أوصل '+e.itemAr+' إلى أمك في المنزل.';en='Deliver the '+e.en+' to Mom at home.'}setH($m,'<b>المهمة الرئيسية · '+step+'/3</b><br><span style="display:block;direction:rtl;unicode-bidi:plaintext">'+ar+'</span><small style="display:block;direction:ltr;opacity:.78;margin-top:4px">'+en+'</small>')}
 function talkMom(){const w=WK,e=ERR[w.err];
  if(w.q===0)showDlg('أمك: «يا بني، اذهب إلى '+e.ar+' واشترِ لنا '+e.itemAr+'. خذ هذه النقود»','Mom: Go to the shop and buy '+e.en+'. Take this money.',[{t:'حاضر يا أمي ✔',fn:()=>{pay(e.cost+20,'+¥'+(e.cost+20)+' — follow the marker on the map to the shop');w.q=1;updQuest()}}]);
- else if(w.q===1)showDlg('أمك: «'+e.ar+' ينتظرك يا بني»','Mom: The shop is marked on your map.',[{t:'حسنًا',fn:()=>{}}]);
+ else if(w.q===1)showDlg('أمك: «'+e.ar+' ينتظرك يا بني»','Mom: The shop is marked on your map.',[{t:'حسنًا',fn:()=>{}},{t:'أحتاج إلى بقية المال',fn:()=>{if(money<e.cost){const extra=e.cost-money+5;pay(extra,'أعطتك أمك '+extra+' لتكمل شراء '+e.itemAr+'.')}else say('معك ما يكفي لشراء المطلوب.')}}]);
  else if(w.q===2&&w.item)showDlg('أمك: «جزاك الله خيرًا يا بني، ما أطيبك!»','Mom: Thank you, my son!',[{t:'🛍 تفضّلي يا أمي',fn:()=>{w.item=false;SV.errands=(SV.errands||0)+1;pay(40,'Mom is happy.  +¥40 — honest errands bring blessings');w.err=(w.err+1)%ERR.length;w.q=0;updQuest()}}]);
  else showDlg('أمك: «لا تتأخر، وصلِّ في وقتها يا بني»','Mom: Do not be late, and pray on time.',[{t:'إن شاء الله',fn:()=>{}}])}
 function talkShop(i){const w=WK,e=ERR[i];
@@ -776,11 +780,11 @@ function talkShop(i){const w=WK,e=ERR[i];
  else say('«أهلًا بك يا بني، تفضّل»  —  the shopkeeper greets you.')}
 let walkShadowCellX=NaN,walkShadowCellZ=NaN;
 function syncWalkShadowAnchor(x,z,force=false){const gx=Math.floor(x/24),gz=Math.floor((z-WZ)/24);if(!force&&gx===walkShadowCellX&&gz===walkShadowCellZ)return;walkShadowCellX=gx;walkShadowCellZ=gz;const tx=gx*24,tz=WZ+gz*24;sunL.position.set(tx-34,36,tz-48);sunL.target.position.set(tx,0,tz);sunL.target.updateMatrixWorld();R.shadowMap.needsUpdate=true}
-function configureWalkVisuals(x,z){R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.08;R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;S.fog.near=30;S.fog.far=250;sunL.castShadow=true;gnd.receiveShadow=true;sunL.shadow.mapSize.set((navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512,(navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512);sunL.shadow.camera.left=-38;sunL.shadow.camera.right=38;sunL.shadow.camera.top=34;sunL.shadow.camera.bottom=-16;sunL.shadow.camera.near=.5;sunL.shadow.camera.far=240;sunL.shadow.camera.updateProjectionMatrix();syncWalkShadowAnchor(x,z,true)}
-function startWalkMode(){started=true;walkMode=true;configureWalkVisuals(-72,Zl(-44));$('bk').style.display='block';$('goals').style.display='block';$('ov').style.display='none';initAudio();mg.gain.value=0;AC.resume();
+function configureWalkVisuals(x,z){R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.22;R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;S.fog.near=38;S.fog.far=300;sunL.castShadow=true;gnd.receiveShadow=true;sunL.shadow.mapSize.set((navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512,(navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512);sunL.shadow.camera.left=-38;sunL.shadow.camera.right=38;sunL.shadow.camera.top=34;sunL.shadow.camera.bottom=-16;sunL.shadow.camera.near=.5;sunL.shadow.camera.far=240;sunL.shadow.camera.updateProjectionMatrix();syncWalkShadowAnchor(x,z,true)}
+function startWalkMode(){started=true;walkMode=true;document.body.classList.add('walk-mode');configureWalkVisuals(-72,Zl(-44));$('bk').style.display='block';$('goals').style.display='block';$('ov').style.display='none';initAudio();mg.gain.value=0;AC.resume();
  chunks.forEach(g=>{S.remove(g);g.userData.d.forEach(d=>d.dispose())});chunks.clear();mosqueList.length=0;tlights.length=0;rider.visible=false;if(mBeam)mBeam.visible=false;$('spd').style.display='none';
  const W=buildAlley();WK={world:W,rects:W.rects,x:-72,z:Zl(-44),yaw:0,spd:0,ph:0,pp:{lf:0,rf:0,al:0,ar:0,lean:0,twist:0,roll:0},q:0,err:0,item:false,fol:null,pray:null,pe:false,items:[],npcs:[],ev:{},cam:new T.Vector3(),dlg:null,mapT:0};
- const PG=new T.Group(),w=WK,rb=T.SkeletonUtils.clone(REAL.boy.scene);rb.scale.setScalar(1.5);w.boy=new T.Group();w.boy.add(rb);rb.traverse(o=>{if(o.isMesh)o.frustumCulled=false});
+ const PG=new T.Group(),w=WK,rb=T.SkeletonUtils.clone(REAL.boy.scene);tuneWalkModel(rb);rb.scale.setScalar(1.5);w.boy=new T.Group();w.boy.add(rb);rb.traverse(o=>{if(o.isMesh)o.frustumCulled=false});
  {const mx=new T.AnimationMixer(rb),cl=REAL.boy.animations.find(a=>a.name==='idle');if(cl){const a=mx.clipAction(cl);a.play();a.paused=true;mx.update(.016)}}
  w.bones=rigBones(rb);w.root=rb.getObjectByName('root');w.rootY=w.root.position.y;const sh=npcGroundShadow(1.08);sh.scale.set(1.08,1.55,1);sh.position.y=.038;w.boy.add(sh);S.add(w.boy);
  const rnd=mkRng(99),kinds=['owner','medic','elder','kid','boy'];
@@ -801,15 +805,15 @@ function startWalkMode(){started=true;walkMode=true;configureWalkVisuals(-72,Zl(
  const cg=mkCat();cg.position.set(-3.6,0,Zl(45));S.add(cg);w.cat=cg;[[-5,44],[-5,46.3]].forEach(q=>{const b=new T.Mesh(new T.CylinderGeometry(.35,.3,.9,8),binM);b.position.set(q[0],.45,Zl(q[1]));PG.add(b)});it('cat',-3,45,'Look at the stray cat',evCat,{ev:{done:false}});
  const a1=mk('elder',31.2,60,0,'argue'),a2=mk('boy',31.2,62.2,Math.PI,'argue');it('argue',32.6,61,'Calm the neighbors',evArgue,{ev:{done:false,npcs:[a1,a2]}});
  it('mosque',W.door.x,W.door.z-WZ,()=>(pPending&&!pDone)?'Go in to pray':'Visit the mosque',()=>{if(pPending&&!pDone)startPrayerWalk();else say('The mosque is quiet now — come at prayer time.')},{r:3});
- PG.userData.d=[];merge(PG);S.add(PG);w.walkers=w.npcs.filter(n=>n.userData.mode==='walk');
- w.cam.set(w.x,2.3,w.z-4.4);updQuest();$('keys').textContent='W walk · A D turn · Shift run · E talk / interact · M sound — on touch: hold to walk, drag to steer, tap the prompt';$('keys').style.opacity=1;setTimeout(()=>$('keys').style.opacity=0,16000);
- say('الحارة — Mom is waiting at the door of your home. Follow the map.')}
+ PG.userData.d=[];merge(PG);S.add(PG);w.walkers=w.npcs.filter(n=>n.userData.mode==='walk');w.goalMarker=makeWalkGoalMarker();S.add(w.goalMarker);
+ w.cam.set(w.x,2.3,w.z-4.4);updQuest();$('keys').textContent='W للحركة · A/D للتوجيه · Shift للجري · E للتحدث أو التفاعل · M للصوت — على الهاتف: اضغط للحركة واسحب للتوجيه';$('keys').style.opacity=1;setTimeout(()=>$('keys').style.opacity=0,16000);
+ say('ابدأ بالتحدث مع أمك عند باب المنزل. العلامة الذهبية هي هدفك الحالي؛ والأنشطة الأخرى اختيارية.')}
 function hitNpc(x,z){for(const n of WK.npcs){const u=n.userData;if(u.mode==='sit'||u.mode==='run'||u.mode==='follow')continue;const dx=x-n.position.x,dz=z-n.position.z;if(dx*dx+dz*dz<.55)return true}return false}
 function helpSum(){return(SV.helped||0)+(SV.trusts||0)+(SV.peace||0)+(SV.mercy||0)+(SV.elders||0)+(SV.schoolRuns||0)}
 function skipToPrayer(){const h=hourNow();let t=null;for(const p of PRY){if(p.h>h){t=p.h;break}}let g=Math.floor(gmin/1440)*1440;if(t===null){g+=1440;t=PRY[0].h}gmin=g+t*60-2}
 function goalsUpdate(){if(!SV.base||SV.baseDay!==today){SV.base={pr:SV.prayers||0,jb:SV.jobs||0,hp:helpSum(),er:SV.errands||0,ob:SV.obeyed||0,sa:SV.salams||0};SV.baseDay=today;svSave()}
- const B=SV.base,G=walkMode?[['Pray 3 prayers on time',(SV.prayers||0)-B.pr,3],['Help 3 neighbors',helpSum()-B.hp,3],['Run 2 family errands',(SV.errands||0)-B.er,2],['Greet 5 people (salam)',(SV.salams||0)-B.sa,5]]:[['Pray 3 prayers on time',(SV.prayers||0)-B.pr,3],['Deliver 2 parcels',(SV.jobs||0)-B.jb,2],['Help 3 people',helpSum()-B.hp,3],['Answer Mom (call or errand)',(SV.obeyed||0)-B.ob+(SV.errands||0)-B.er,1]];
- let html='<b>Today\'s goals</b><br>',all=true;G.forEach(q=>{const dn=q[1]>=q[2];if(!dn)all=false;html+=(dn?'✔ ':'○ ')+q[0]+' ('+Math.min(q[1],q[2])+'/'+q[2]+')<br>'});
+ const B=SV.base,G=walkMode?[['الصلاة في وقتها × 3',(SV.prayers||0)-B.pr,3],['مساعدة 3 أشخاص',helpSum()-B.hp,3],['إنجاز مشوارين للأسرة',(SV.errands||0)-B.er,2],['إلقاء السلام على 5 أشخاص',(SV.salams||0)-B.sa,5]]:[['Pray 3 prayers on time',(SV.prayers||0)-B.pr,3],['Deliver 2 parcels',(SV.jobs||0)-B.jb,2],['Help 3 people',helpSum()-B.hp,3],['Answer Mom (call or errand)',(SV.obeyed||0)-B.ob+(SV.errands||0)-B.er,1]];
+ let html='<b>'+(walkMode?'أهداف اليوم · مهام جانبية':'Today\'s goals')+'</b><br>',all=true;G.forEach(q=>{const dn=q[1]>=q[2];if(!dn)all=false;html+=(dn?'✔ ':'○ ')+q[0]+' ('+Math.min(q[1],q[2])+'/'+q[2]+')<br>'});
  if(all&&SV.bonusDay!==today){SV.bonusDay=today;money+=300;SV.money=money;svSave();fan();coin();say('🌟 All of today\'s goals are done!  +¥300')}
  setH($('goals'),html)}
 function drawWalkMap(w){w.mapT++;if(w.mapT%2)return;const c=mc,sc=1.08,X=x=>95+x*sc,Y=z=>95-(z-WZ)*sc;
@@ -817,10 +821,11 @@ function drawWalkMap(w){w.mapT++;if(w.mapT%2)return;const c=mc,sc=1.08,X=x=>95+x
  c.fillStyle='rgba(96,74,58,.85)';for(const q of w.rects)c.fillRect(X(q.x0),Y(q.z1),(q.x1-q.x0)*sc,(q.z1-q.z0)*sc);
  c.fillStyle='rgba(120,170,120,.7)';c.fillRect(X(w.world.sx-12),Y(w.world.zq+12),24*sc,24*sc);
  const pulse=.5+.5*Math.sin(Date.now()/260);c.fillStyle='#2e9e7b';c.beginPath();c.arc(X(w.world.sx),Y(w.world.zc),6,0,7);c.fill();c.fillStyle='#fff';c.beginPath();c.arc(X(w.world.sx),Y(w.world.zc)+1,2.5,Math.PI,0);c.fill();
- for(const it of w.items){if(it.id==='mosque'||it.ev&&it.ev.done)continue;c.fillStyle=it.id==='mom'?'#4aa3ff':ERR.some(e=>e.id===it.id)?'#ff8a2a':'#ffd05a';c.beginPath();c.arc(X(it.x),Y(it.z),4,0,7);c.fill()}
- const qi=w.q===1?ERR[w.err].id:'mom',qt=(w.q===0||w.q===1||w.q===2)?w.items.find(i=>i.id===qi):null;if(qt){c.strokeStyle='rgba(255,255,255,'+(.5+.5*pulse)+')';c.lineWidth=2;c.beginPath();c.arc(X(qt.x),Y(qt.z),8+pulse*3,0,7);c.stroke()}
+ const active=activeWalkObjective(w);for(const it of w.items){if(it.id==='mosque'||it.ev&&it.ev.done)continue;const isActive=!!active&&it.id===active.id;c.fillStyle=isActive?'#ffe27a':ERR.some(e=>e.id===it.id)?'rgba(255,145,75,.7)':'rgba(220,220,205,.62)';c.beginPath();c.arc(X(it.x),Y(it.z),isActive?5.5:2.7,0,Math.PI*2);c.fill()}
+ const qt=activeWalkObjective(w);if(qt){c.strokeStyle='rgba(255,255,255,'+(.5+.5*pulse)+')';c.lineWidth=2;c.beginPath();c.arc(X(qt.x),Y(qt.z),8+pulse*3,0,7);c.stroke()}
  c.fillStyle='rgba(60,60,60,.6)';for(const n of w.npcs)c.fillRect(X(n.position.x)-1,Y(n.position.z)-1,2,2);
  c.translate(X(w.x),Y(w.z));c.rotate(w.yaw);c.fillStyle='#fff';c.strokeStyle='#000';c.lineWidth=1;c.beginPath();c.moveTo(0,-8);c.lineTo(-5.5,6);c.lineTo(5.5,6);c.closePath();c.fill();c.stroke();c.restore()}
+function walkActionLabel(it){if(!it)return'';const labels={mom:'تحدّث مع أمك',baker:'تحدث مع الخبّاز',grocer:'تحدث مع البقّال',pharm:'تحدث مع الصيدلي',books:'تحدث مع صاحب المكتبة',ow:'ساعد السيدة العجوز',lost:'ساعد الطفل في العثور على أمه',change:'اشترِ التمر أو أعد المال الزائد',dare:'تحدث مع صديقك',cat:'أطعم القطة',argue:'ساعد الجارين على التصالح'};if(it.id==='mosque')return(pPending&&!pDone)?'ادخل المسجد للصلاة':'زر المسجد';return labels[it.id]||(typeof it.label==='function'?it.label():it.label)||'تفاعل'}
 function walkLoop(dt){const w=WK;w.fc=(w.fc||0)+1;
  gmin+=dt*(window.__ts||.4);const h=hourNow();skyHour(h);{const dN=Math.floor(gmin/1440);if(dN!==lastDay){lastDay=dN;dayN=dN;buildPRY()}}
  let kk=-1;for(let i=0;i<PRY.length;i++)if(h>=PRY[i].h&&h<PRY[i].e)kk=i;
@@ -835,7 +840,7 @@ function walkLoop(dt){const w=WK;w.fc=(w.fc||0)+1;
  const k2=Math.min(1,Math.abs(w.spd)/5.8);let o;
  if(Math.abs(w.spd)>.12){w.ph+=dt*Math.abs(w.spd)*2.6*(w.spd<0?-1:1);o=walkOff(w.ph,.2+.24*k2);o.lean=(o.lean||0)+.1*k2}else o={lean:.012*Math.sin(t*1.7)};
  easePose(w.pp,o,Math.min(1,10*dt));bodyPose(w.bones,w.pp);w.root.position.y=w.rootY+(Math.abs(w.spd)>.12?(.012+.012*k2)*Math.abs(Math.sin(w.ph)):0);
- w.boy.position.set(w.x,0,w.z);w.boy.rotation.y=w.yaw;syncWalkShadowAnchor(w.x,w.z);
+ w.boy.position.set(w.x,0,w.z);w.boy.rotation.y=w.yaw;syncWalkShadowAnchor(w.x,w.z);updateWalkGoalMarker(w,dt);
  for(const n of w.npcs)npcUpdate(n,dt);
  {const cu=w.cat.userData;cu.mixer.update(dt);cu.eatAmt+=(cu.eatTarget-cu.eatAmt)*(1-Math.exp(-6*dt));if(cu.eatAmt>.01){const a=-(1.0+Math.sin(t*5)*.14)*cu.eatAmt/2;cu.neck.forEach(b=>b.quaternion.multiply(_qn.setFromAxisAngle(_ex,a)))}}
  if(w.fol){const f=w.fol,n=f.npc,u=n.userData;u.mode='follow';const tx=w.x-fx*1.1-fz*.45,tz=w.z-fz*1.1+fx*.45,dx=tx-n.position.x,dz=tz-n.position.z,d=Math.hypot(dx,dz);
@@ -847,7 +852,7 @@ function walkLoop(dt){const w=WK;w.fc=(w.fc||0)+1;
  let near=null,nd=1e9;for(const it of w.items){if(w.fol&&w.fol.npc===(it.ev&&it.ev.npc))continue;const d=Math.hypot(w.x-it.x,w.z-it.z);if(d<it.r&&d<nd){near=it;nd=d}}
  let gn=null;if(!near)for(const n of w.npcs){const u=n.userData;if(u.mode==='sit'||u.mode==='argue'||u.mode==='follow')continue;const d=Math.hypot(w.x-n.position.x,w.z-n.position.z);if(d<1.7&&d<nd){gn=n;nd=d}}
  const eNow=K.KeyE||actHeld,eE=eNow&&!w.pe;w.pe=!!eNow;
- if(!lock){if(near){$a.style.display='block';$a.textContent='Press E: '+(typeof near.label==='function'?near.label():near.label);if(eE)near.fn(near)}else if(gn){$a.style.display='block';$a.textContent='Press E: say "السلام عليكم"';if(eE)greet(gn)}else $a.style.display='none'}
+ if(!lock){if(near){$a.style.display='block';$a.textContent='E · '+walkActionLabel(near);if(eE)near.fn(near)}else if(gn){$a.style.display='block';$a.textContent='E · إلقاء السلام';if(eE)greet(gn)}else $a.style.display='none'}
  let cd=4.4;for(;cd>1.4;cd-=.5)if(!blocked(w.x-fx*cd,w.z-fz*cd,.25))break;
  const tp=new T.Vector3(w.x-fx*cd,2.3-(4.4-cd)*.25,w.z-fz*cd);w.cam.lerp(tp,1-Math.exp(-8*dt));const hl=hillJ(w.z);
  C.position.set(w.cam.x,w.cam.y+hl,w.cam.z);C.lookAt(w.x+fx*2.5,1.25+hl,w.z+fz*2.5);C.fov=run&&fw?64:58;C.updateProjectionMatrix();
@@ -1021,11 +1026,11 @@ const KF=[
 function skyHour(hr){let i=0;while(i<KF.length-2&&hr>=KF[i+1].h)i++;const a=KF[i],b=KF[i+1],t0=clamp((hr-a.h)/(b.h-a.h),0,1),t=t0*t0*(3-2*t0),L2=(x,y)=>x+(y-x)*t,v3=(k,o)=>o.set(L2(a[k][0],b[k][0]),L2(a[k][1],b[k][1]),L2(a[k][2],b[k][2]));
  const u=sky.material.uniforms;v3('hor',u.hor.value);v3('mid',u.mid.value);v3('top',u.top.value);u.su.value=L2(a.su,b.su);u.sd.value.set(-.55,L2(a.sdY,b.sdY),-.82).normalize();
  const hz=u.hor.value;fcol.setRGB(hz.x,hz.y,hz.z);S.fog.color.copy(fcol);S.background.copy(fcol);
- hemi.intensity=L2(a.hemi,b.hemi);sunL.intensity=L2(a.sun,b.sun);warmFill.intensity=walkMode ? .035+L2(a.sun,b.sun)*.15 : 0;skyFill.intensity=walkMode ? .025+L2(a.hemi,b.hemi)*.065 : 0;const mt=L2(a.mt,b.mt);mtM.forEach(m=>m.color.copy(m.userData.c0).multiplyScalar(mt));
+ const hi=L2(a.hemi,b.hemi),si=L2(a.sun,b.sun);hemi.intensity=hi+(walkMode?.32:0);sunL.intensity=si+(walkMode?.10:0);hemi.color.setHex(walkMode?0xfff1df:0xffc49a);hemi.groundColor.setHex(walkMode?0x85858b:0x5a4a4a);sunL.color.setHex(walkMode?0xffedda:0xff9d5c);warmFill.intensity=walkMode?.14+si*.12:0;skyFill.intensity=walkMode?.14+hi*.10:0;const mt=L2(a.mt,b.mt);mtM.forEach(m=>m.color.copy(m.userData.c0).multiplyScalar(mt));
  const cl=L2(a.cl,b.cl);cld.children.forEach(c=>{if(c.material)c.material.opacity=cl});stars.material.opacity=L2(a.st,b.st);lamp.intensity=L2(a.lamp,b.lamp);glowM.opacity=L2(a.glow,b.glow)}
 function dusk(k){const u=sky.material.uniforms;['hor','mid','top'].forEach((n,i)=>u[n].value.lerpVectors(PA[i],PB[i],k));u.su.value=1-k;u.sd.value.set(-.55,.16-.5*k,-.82).normalize();
  const hz=u.hor.value;fcol.setRGB(hz.x,hz.y,hz.z);S.fog.color.copy(fcol);S.background.copy(fcol);
- hemi.intensity=.95-.5*k;sunL.intensity=1.1*(1-k)+.12;warmFill.intensity=walkMode ? .035+.15*(1-k) : 0;skyFill.intensity=walkMode ? .025+.065*(.95-.5*k) : 0;mtM.forEach(m=>m.color.copy(m.userData.c0).multiplyScalar(1-.78*k));
+ hemi.intensity=.95-.5*k+(walkMode?.32:0);sunL.intensity=1.1*(1-k)+.12+(walkMode?.10:0);hemi.color.setHex(walkMode?0xfff1df:0xffc49a);hemi.groundColor.setHex(walkMode?0x85858b:0x5a4a4a);sunL.color.setHex(walkMode?0xffedda:0xff9d5c);warmFill.intensity=walkMode?.14+.15*(1-k):0;skyFill.intensity=walkMode?.14+.065*(.95-.5*k):0;mtM.forEach(m=>m.color.copy(m.userData.c0).multiplyScalar(1-.78*k));
  cld.children.forEach(c=>{if(c.material)c.material.opacity=.8*(1-.85*k)});stars.material.opacity=clamp(k*1.6-.5,0,1);lamp.intensity=k*1.8;glowM.opacity=.55+.4*k}
 function cluck(){if(!AC)return;const t=AC.currentTime;[0,.09,.17].forEach((dl,i)=>{const o=AC.createOscillator(),e=AC.createGain(),fl=AC.createBiquadFilter();o.type='square';fl.type='bandpass';fl.frequency.value=900+i*130;fl.Q.value=4;o.frequency.setValueAtTime(380,t+dl);o.frequency.exponentialRampToValueAtTime(220,t+dl+.08);e.gain.setValueAtTime(.05,t+dl);e.gain.exponentialRampToValueAtTime(.0001,t+dl+.1);o.connect(fl);fl.connect(e);e.connect(mg);o.start(t+dl);o.stop(t+dl+.12)})}
 function splash(){if(!AC)return;nz(2600,.28,.16,'bandpass',2.2);nz(700,.22,.09,'lowpass',1);const t=AC.currentTime;[1400,1900].forEach((f,i)=>{const s=t+i*.03,o=AC.createOscillator(),e=AC.createGain();o.type='sine';o.frequency.setValueAtTime(f,s);o.frequency.exponentialRampToValueAtTime(f*.6,s+.08);e.gain.setValueAtTime(.05,s);e.gain.exponentialRampToValueAtTime(.0001,s+.1);o.connect(e);e.connect(mg);o.start(s);o.stop(s+.12)})}
