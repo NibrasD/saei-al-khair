@@ -726,13 +726,13 @@ function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(
   const head=new T.Mesh(new T.SphereGeometry(.145,12,9),bikeSkinM);head.position.set(0,1.57,.015);o.add(head);
   const helmet=new T.Mesh(new T.SphereGeometry(.16,12,8,0,Math.PI*2,0,Math.PI*.56),frame);helmet.position.set(0,1.62,.005);o.add(helmet);
   [-1,1].forEach(side=>{rod(o,[side*.12,1.30,.015],[side*.19,.94,.55],.035,shirt);rod(o,[side*.075,1.05,-.04],[side*.11,.60,-.29],.045,shirt);rod(o,[side*.11,.60,-.29],[side*.10,.43,-.10],.032,tireM)});
-  const x0=LN[limits.a],x1=LN[limits.a+1],z0=NZ[limits.b],z1=NZ[limits.b+1],lane=3.32,round=1.65;
+  const x0=LN[limits.a],x1=LN[limits.a+1],z0=NZ[limits.b],z1=NZ[limits.b+1],lane=3.15,round=1.0;
   const pathPts=[
    [x0+lane,z0+lane+round],[x0+lane,z1-lane-round],
    [x0+lane+round,z1-lane],[x1-lane-round,z1-lane],
    [x1-lane,z1-lane-round],[x1-lane,z0+lane+round],
    [x1-lane-round,z0+lane],[x0+lane+round,z0+lane]
-  ].map(p=>new T.Vector3(p[0],WALK_Y,p[1]));
+  ].map(p=>new T.Vector3(p[0],0,p[1]));
   const route=new T.CatmullRomCurve3(pathPts,true,'centripetal',.18),length=route.getLength(),u0=limits.progress||0,pt=route.getPointAt(u0),tan=route.getTangentAt(u0);
   o.position.copy(pt);o.rotation.y=Math.atan2(tan.x,tan.z);
   o.userData.traffic={route,length,progress:u0,speed:limits.speed,wheels,crank,phase:Math.random()*6.28};
