@@ -126,3 +126,19 @@ body.walk-mode #menu .walk-dialog button:active{background:rgba(244,207,120,.2)}
 body.walk-mode #map{background:#242a2b;border-color:#d8c28e;box-shadow:0 5px 18px rgba(0,0,0,.48)}
 body.walk-mode #mis,body.walk-mode #goals{font-family:"Cairo","Noto Sans Arabic",Tahoma,Arial,sans-serif}
 body.walk-mode #mis .mission-copy{font-weight:700;line-height:1.8}
+
+
+/* Clear map frame and readable walking objective panel. */
+body.walk-mode #map{
+  border-radius:16px!important;
+  border:2px solid rgba(238,220,170,.94)!important;
+  background:#242a2b!important;
+  box-shadow:0 7px 22px rgba(0,0,0,.5)!important;
+}
+body.walk-mode #mis,body.walk-mode #goals{
+  background:rgba(20,27,29,.94)!important;
+}
+body.walk-mode #mis{
+  border:1px solid rgba(245,211,130,.78)!important;
+}
+body.walk-mode #mis .mission-copy{color:#fff9ed;font-weight:700}
