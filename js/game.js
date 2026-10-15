@@ -880,54 +880,54 @@ function goalsUpdate(){if(!SV.base||SV.baseDay!==today){SV.base={pr:SV.prayers||
  setH($('goals'),html)}
 function drawWalkMap(w){
  w.mapT++;if(w.mapT%2)return;
- const c=mc,sc=.96,center=95,P=(x,z)=>({x:center+(x-w.x)*sc,y:center-(z-w.z)*sc});
- c.clearRect(0,0,190,190);c.save();c.beginPath();c.arc(center,center,92,0,Math.PI*2);c.clip();
- c.fillStyle='#c1beb4';c.fillRect(0,0,190,190);
- // Blocks first, then roads and sidewalks, all in a fixed north-up orientation.
+ const c=mc,sc=1.08,center=95,P=(x,z)=>({x:center+x*sc,y:center-(z-WZ)*sc}),here=P(w.x,w.z);
+ c.clearRect(0,0,190,190);c.save();c.beginPath();c.rect(4,4,182,182);c.clip();c.fillStyle='#c7c5bc';c.fillRect(4,4,182,182);
+ // The entire neighbourhood stays still on screen; the player marker moves over it.
  for(let i=0;i<4;i++)for(let j=0;j<4;j++){
   if(i===1&&j===2)continue;
   const x0=LN[i]+4.3,x1=LN[i+1]-4.3,z0=NZ[j]+4.3,z1=NZ[j+1]-4.3,top=P(x0,z1);
-  c.fillStyle=((i+j)%2===0)?'#77756d':'#858176';c.fillRect(top.x,top.y,(x1-x0)*sc,(z1-z0)*sc);
-  c.strokeStyle='rgba(35,39,38,.5)';c.lineWidth=1;c.strokeRect(top.x,top.y,(x1-x0)*sc,(z1-z0)*sc)
+  c.fillStyle=((i+j)%2===0)?'#777970':'#89877c';c.fillRect(top.x,top.y,(x1-x0)*sc,(z1-z0)*sc);
+  c.strokeStyle='rgba(34,39,39,.55)';c.lineWidth=.8;c.strokeRect(top.x,top.y,(x1-x0)*sc,(z1-z0)*sc)
  }
- c.fillStyle='#3c4244';
+ c.fillStyle='#3d4548';
  for(const x of LN){const top=P(x-3.6,WZ+77);c.fillRect(top.x,top.y,7.2*sc,154*sc)}
  for(const z of NZ){const top=P(-77,z+3.6);c.fillRect(top.x,top.y,154*sc,7.2*sc)}
- // Muted concrete paths line up with the walkable sidewalk tiles in the 3D scene.
- c.fillStyle='#999184';
+ c.fillStyle='#aaa294';
  for(let i=0;i<4;i++)for(let j=0;j<4;j++){
   const x0=LN[i]+6,x1=LN[i+1]-6,z0=NZ[j]+6,z1=NZ[j+1]-6;
   for(const zc of [z0-1,z1+1]){const p=P(x0,zc+1);c.fillRect(p.x,p.y,(x1-x0)*sc,2*sc)}
   for(const xc of [x0-1,x1+1]){const p=P(xc-1,z1);c.fillRect(p.x,p.y,2*sc,(z1-z0)*sc)}
  }
- // Subtle broken centre lines help distinguish parallel streets.
- c.strokeStyle='rgba(224,210,170,.42)';c.lineWidth=.75;c.setLineDash([3,4]);
+ c.strokeStyle='rgba(227,216,183,.35)';c.lineWidth=.7;c.setLineDash([2.5,3]);
  for(const x of LN){const a=P(x,WZ+77),b=P(x,WZ-77);c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke()}
- for(const z of NZ){const a=P(-77,z),b=P(77,z);c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke()}
- c.setLineDash([]);
- const plaza=P(w.world.sx-12,w.world.zq+12);c.fillStyle='#657b63';c.fillRect(plaza.x,plaza.y,24*sc,24*sc);
- const fountain=P(w.world.sx,w.world.zc);c.fillStyle='#d5c9ac';c.beginPath();c.arc(fountain.x,fountain.y,4.1,0,Math.PI*2);c.fill();c.fillStyle='#5d9a9c';c.beginPath();c.arc(fountain.x,fountain.y,2.4,0,Math.PI*2);c.fill();
+ for(const z of NZ){const a=P(-77,z),b=P(77,z);c.beginPath();c.moveTo(a.x,a.y);c.lineTo(b.x,b.y);c.stroke()}c.setLineDash([]);
+ const plaza=P(w.world.sx-12,w.world.zq+12);c.fillStyle='#647e63';c.fillRect(plaza.x,plaza.y,24*sc,24*sc);
+ const fountain=P(w.world.sx,w.world.zc);c.fillStyle='#d7c9a9';c.beginPath();c.arc(fountain.x,fountain.y,4,0,Math.PI*2);c.fill();c.fillStyle='#57999a';c.beginPath();c.arc(fountain.x,fountain.y,2.3,0,Math.PI*2);c.fill();
  const active=activeWalkObjective(w),prayerGoal=pPending&&!pDone;
  if(active){
-  const pt=P(active.x,active.z),dx=pt.x-center,dy=pt.y-center,dist=Math.hypot(dx,dy),r=82,edge=dist>r?{x:center+dx*r/dist,y:center+dy*r/dist}:pt;
-  c.strokeStyle='rgba(255,213,105,.96)';c.lineWidth=2.2;c.setLineDash([4,3]);c.beginPath();c.moveTo(center,center);c.lineTo(edge.x,edge.y);c.stroke();c.setLineDash([]);
-  c.fillStyle='#ffe28a';c.beginPath();c.arc(edge.x,edge.y,dist>r?5:4.5,0,Math.PI*2);c.fill();c.strokeStyle='#352b18';c.lineWidth=1.2;c.stroke()
+  const pt=P(active.x,active.z);c.strokeStyle='rgba(255,213,105,.96)';c.lineWidth=2;c.setLineDash([4,3]);c.beginPath();c.moveTo(here.x,here.y);c.lineTo(pt.x,pt.y);c.stroke();c.setLineDash([]);
+  c.save();c.translate(pt.x,pt.y);c.rotate(Math.PI/4);c.fillStyle='#ffe28a';c.strokeStyle='#3b3020';c.lineWidth=1.2;c.fillRect(-4,-4,8,8);c.strokeRect(-4,-4,8,8);c.restore()
  }
  for(const it of w.items){
   if((it.id==='mosque'&&!prayerGoal)||(it.ev&&it.ev.done)||(active&&it.id===active.id))continue;
-  const p=P(it.x,it.z);if(Math.hypot(p.x-center,p.y-center)>87)continue;
-  c.fillStyle=ERR.some(e=>e.id===it.id)?'#f2a06f':'#f0e9d5';c.strokeStyle='rgba(35,39,38,.9)';c.lineWidth=1;
-  c.beginPath();c.arc(p.x,p.y,2.6,0,Math.PI*2);c.fill();c.stroke()
+  const p=P(it.x,it.z);if(p.x<7||p.x>183||p.y<27||p.y>156)continue;
+  const isShop=ERR.some(e=>e.id===it.id);c.fillStyle=isShop?'#eda36e':'#eee8d7';c.strokeStyle='#293033';c.lineWidth=1;
+  c.beginPath();c.arc(p.x,p.y,isShop?3:2.4,0,Math.PI*2);c.fill();c.stroke()
  }
  for(const n of w.npcs){
-  const p=P(n.position.x,n.position.z);if(Math.hypot(p.x-center,p.y-center)>89)continue;
+  const p=P(n.position.x,n.position.z);if(p.x<7||p.x>183||p.y<27||p.y>156)continue;
   const kind=n.userData.kind,walking=n.userData.mode==='walk'||n.userData.mode==='run';
-  c.fillStyle=walking?'#62d5bf':kind==='elder'?'#ffc27a':kind==='kid'?'#86baff':'#f5e9ca';
-  c.strokeStyle='rgba(24,31,32,.95)';c.lineWidth=1.2;c.beginPath();c.arc(p.x,p.y,walking?3:2.5,0,Math.PI*2);c.fill();c.stroke()
+  c.fillStyle=walking?'#68d8c0':kind==='elder'?'#ffd08c':kind==='kid'?'#8ec1ff':'#eee4ce';
+  c.strokeStyle='rgba(24,31,32,.95)';c.lineWidth=1;c.beginPath();c.arc(p.x,p.y,walking?2.6:2.2,0,Math.PI*2);c.fill();c.stroke()
  }
- // North stays at the top; the arrow alone rotates to show the player's actual heading.
- c.save();c.translate(center,center);c.rotate(w.yaw);
- c.fillStyle='#fff0ad';c.strokeStyle='#202a30';c.lineWidth=1.8;c.beginPath();c.moveTo(0,-9);c.lineTo(-6,6);c.lineTo(0,3);c.lineTo(6,6);c.closePath();c.fill();c.stroke();c.restore();c.restore()
+ c.save();c.translate(here.x,here.y);c.rotate(w.yaw);c.fillStyle='#fff0ad';c.strokeStyle='#202a30';c.lineWidth=1.6;c.beginPath();c.moveTo(0,-6.5);c.lineTo(-4.8,4.2);c.lineTo(0,2.4);c.lineTo(4.8,4.2);c.closePath();c.fill();c.stroke();c.restore();
+ c.fillStyle='rgba(20,25,27,.92)';c.fillRect(5,5,180,19);
+ c.direction='rtl';c.textAlign='right';c.font='bold 10px Cairo, sans-serif';c.fillStyle='#fff4dc';c.fillText('خريطة الحارة',178,18);
+ c.textAlign='left';c.font='bold 10px Cairo, sans-serif';c.fillStyle='#e8d7a0';c.fillText('N ↑',10,18);
+ c.fillStyle='rgba(20,25,27,.94)';c.fillRect(5,161,180,23);
+ const legend=(x,col,label)=>{c.fillStyle=col;c.beginPath();c.arc(x,172,3,0,Math.PI*2);c.fill();c.fillStyle='#fff4dc';c.font='10px Cairo, sans-serif';c.textAlign='left';c.fillText(label,x+6,175)};
+ legend(12,'#fff0ad','أنت');legend(67,'#ffe28a','الهدف');legend(119,'#68d8c0','المشاة');
+ c.restore()
 }
 function walkActionLabel(it){if(!it)return'';const labels={mom:'تكلّم مع أمك',baker:'اذهب إلى الخبّاز',grocer:'اذهب إلى البقّال',pharm:'اذهب إلى الصيدلي',books:'اذهب إلى بائع الكتب',ow:'ساعد السيدة المسنّة',lost:'ساعد الطفل في العثور على أمه',change:'اشترِ التمر أو أعد المال الزائد',dare:'تكلّم مع صديقك',cat:'أطعم القطة',argue:'ساعد الجارين على التصالح'};if(it.id==='mosque')return(pPending&&!pDone)?'ادخل المسجد للصلاة':'زر المسجد';return labels[it.id]||'تفاعل'}
 function walkLoop(dt){const w=WK;w.fc=(w.fc||0)+1;
