@@ -820,15 +820,42 @@ function goalsUpdate(){if(!SV.base||SV.baseDay!==today){SV.base={pr:SV.prayers||
  let html='<b>'+(walkMode?'أهداف اليوم · مهام جانبية':'Today\'s goals')+'</b><br>',all=true;G.forEach(q=>{const dn=q[1]>=q[2];if(!dn)all=false;html+=(dn?'✔ ':'○ ')+q[0]+' ('+Math.min(q[1],q[2])+'/'+q[2]+')<br>'});
  if(all&&SV.bonusDay!==today){SV.bonusDay=today;money+=300;SV.money=money;svSave();fan();coin();say((walkMode?'اكتملت أهداف اليوم! مكافأة إضافية +¥300':'🌟 All of today\'s goals are done!  +¥300'))}
  setH($('goals'),html)}
-function drawWalkMap(w){w.mapT++;if(w.mapT%2)return;const c=mc,sc=1.08,X=x=>95+x*sc,Y=z=>95-(z-WZ)*sc;
- c.clearRect(0,0,190,190);c.save();c.beginPath();c.arc(95,95,93,0,Math.PI*2);c.clip();c.fillStyle='rgba(206,186,140,.78)';c.fillRect(0,0,190,190);
- c.fillStyle='rgba(96,74,58,.85)';for(const q of w.rects)c.fillRect(X(q.x0),Y(q.z1),(q.x1-q.x0)*sc,(q.z1-q.z0)*sc);
- c.fillStyle='rgba(120,170,120,.7)';c.fillRect(X(w.world.sx-12),Y(w.world.zq+12),24*sc,24*sc);
- const pulse=.5+.5*Math.sin(Date.now()/260);c.fillStyle='#2e9e7b';c.beginPath();c.arc(X(w.world.sx),Y(w.world.zc),6,0,7);c.fill();c.fillStyle='#fff';c.beginPath();c.arc(X(w.world.sx),Y(w.world.zc)+1,2.5,Math.PI,0);c.fill();
- const active=activeWalkObjective(w),prayerGoal=pPending&&!pDone;for(const it of w.items){if((it.id==='mosque'&&!prayerGoal)||(it.ev&&it.ev.done))continue;const isActive=!!active&&it.id===active.id;c.fillStyle=isActive?'#ffe27a':ERR.some(e=>e.id===it.id)?'rgba(255,145,75,.7)':'rgba(220,220,205,.62)';c.beginPath();c.arc(X(it.x),Y(it.z),isActive?5.5:2.7,0,Math.PI*2);c.fill()}
- const qt=activeWalkObjective(w);if(qt){c.strokeStyle='rgba(255,255,255,'+(.5+.5*pulse)+')';c.lineWidth=2;c.beginPath();c.arc(X(qt.x),Y(qt.z),8+pulse*3,0,7);c.stroke()}
- c.fillStyle='rgba(60,60,60,.6)';for(const n of w.npcs)c.fillRect(X(n.position.x)-1,Y(n.position.z)-1,2,2);
- c.translate(X(w.x),Y(w.z));c.rotate(w.yaw);c.fillStyle='#fff';c.strokeStyle='#000';c.lineWidth=1;c.beginPath();c.moveTo(0,-8);c.lineTo(-5.5,6);c.lineTo(5.5,6);c.closePath();c.fill();c.stroke();c.restore()}
+function drawWalkMap(w){
+ w.mapT++;if(w.mapT%2)return;
+ const c=mc,sc=.82,center=95,P=(x,z)=>({x:(x-w.x)*sc,y:-(z-w.z)*sc});
+ c.clearRect(0,0,190,190);c.save();c.beginPath();c.arc(center,center,92,0,Math.PI*2);c.clip();c.fillStyle='#b5b0a2';c.fillRect(0,0,190,190);
+ // Rotate the town around the player, so the arrow's top always means straight ahead.
+ c.translate(center,center);c.rotate(-w.yaw);
+ // Building blocks between streets: fewer, clearer shapes than plotting every collision box.
+ for(let i=0;i<4;i++)for(let j=0;j<4;j++){
+  if(i===1&&j===2)continue;
+  const x0=LN[i]+4.3,x1=LN[i+1]-4.3,z0=NZ[j]+4.3,z1=NZ[j+1]-4.3,top=P(x0,z1);
+  c.fillStyle=((i+j)%2===0)?'#817c72':'#898477';c.fillRect(top.x,top.y,(x1-x0)*sc,(z1-z0)*sc)
+ }
+ // Clear road grid.
+ c.fillStyle='#4b5154';
+ for(const x of LN){const top=P(x-3.6,WZ+77);c.fillRect(top.x,top.y,7.2*sc,154*sc)}
+ for(const z of NZ){const top=P(-77,z+3.6);c.fillRect(top.x,top.y,154*sc,7.2*sc)}
+ // Central square and fountain.
+ const plaza=P(w.world.sx-12,w.world.zq+12);c.fillStyle='#708a70';c.fillRect(plaza.x,plaza.y,24*sc,24*sc);
+ const fountain=P(w.world.sx,w.world.zc);c.fillStyle='#d4c7a8';c.beginPath();c.arc(fountain.x,fountain.y,4.1,0,Math.PI*2);c.fill();c.fillStyle='#6a9da0';c.beginPath();c.arc(fountain.x,fountain.y,2.4,0,Math.PI*2);c.fill();
+ const active=activeWalkObjective(w),prayerGoal=pPending&&!pDone;
+ // The gold line leads to the current goal; distant goals get a direction marker at the map edge.
+ if(active){
+  const pt=P(active.x,active.z),dist=Math.hypot(pt.x,pt.y),edge=dist>83?{x:pt.x*83/dist,y:pt.y*83/dist}:pt;
+  c.strokeStyle='rgba(255,218,123,.88)';c.lineWidth=1.6;c.setLineDash([3,3]);c.beginPath();c.moveTo(0,0);c.lineTo(edge.x,edge.y);c.stroke();c.setLineDash([]);
+  c.fillStyle='#ffe28a';c.beginPath();c.arc(edge.x,edge.y,dist>83?4.2:5,0,Math.PI*2);c.fill();c.strokeStyle='#352b18';c.lineWidth=1.2;c.stroke()
+ }
+ for(const it of w.items){
+  if((it.id==='mosque'&&!prayerGoal)||(it.ev&&it.ev.done)||(active&&it.id===active.id))continue;
+  const p=P(it.x,it.z);if(Math.hypot(p.x,p.y)>87)continue;
+  c.fillStyle=ERR.some(e=>e.id===it.id)?'rgba(255,155,93,.86)':'rgba(232,226,204,.72)';c.beginPath();c.arc(p.x,p.y,2.3,0,Math.PI*2);c.fill()
+ }
+ c.fillStyle='rgba(48,53,53,.8)';
+ for(const n of w.npcs){const p=P(n.position.x,n.position.z);if(Math.hypot(p.x,p.y)<89){c.beginPath();c.arc(p.x,p.y,1.2,0,Math.PI*2);c.fill()}}
+ // Player stays in the center, facing up.
+ c.fillStyle='#fff2bd';c.strokeStyle='#202a30';c.lineWidth=1.5;c.beginPath();c.moveTo(0,-8);c.lineTo(-5,5);c.lineTo(0,2);c.lineTo(5,5);c.closePath();c.fill();c.stroke();c.restore()
+}
 function walkActionLabel(it){if(!it)return'';const labels={mom:'تكلّم مع أمك',baker:'اذهب إلى الخبّاز',grocer:'اذهب إلى البقّال',pharm:'اذهب إلى الصيدلي',books:'اذهب إلى بائع الكتب',ow:'ساعد السيدة المسنّة',lost:'ساعد الطفل في العثور على أمه',change:'اشترِ التمر أو أعد المال الزائد',dare:'تكلّم مع صديقك',cat:'أطعم القطة',argue:'ساعد الجارين على التصالح'};if(it.id==='mosque')return(pPending&&!pDone)?'ادخل المسجد للصلاة':'زر المسجد';return labels[it.id]||'تفاعل'}
 function walkLoop(dt){const w=WK;w.fc=(w.fc||0)+1;
  gmin+=dt*(window.__ts||.4);const h=hourNow();skyHour(h);{const dN=Math.floor(gmin/1440);if(dN!==lastDay){lastDay=dN;dayN=dN;buildPRY()}}
