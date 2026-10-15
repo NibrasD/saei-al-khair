@@ -651,9 +651,13 @@ function doorProp(){const g=new T.Group(),dm=L(0x5a3a22),aw=L(0xc8352f),wh=L(0xf
  const add=(m,x,y,zz)=>{m.position.set(x,y,zz);g.add(m);return m};
  add(new T.Mesh(new T.BoxGeometry(1.7,2.7,.25),dm),0,1.35,0);const awn=add(new T.Mesh(new T.BoxGeometry(3.6,.12,1.6),aw),0,2.95,-.75);awn.rotation.x=.18;
  add(new T.Mesh(new T.BoxGeometry(3.6,.5,.1),wh),0,2.6,-1.45);add(new T.Mesh(new T.BoxGeometry(.9,1.0,.08),WN),-2.2,1.6,-.05);add(new T.Mesh(new T.BoxGeometry(.9,1.0,.08),WN),2.2,1.6,-.05);return g}
-function stallProp(col,goods){const g=new T.Group(),wd=L(0x8a5a36),aw=L(col),gd=goods.map(c=>L(c)),add=(m,x,y,z)=>{m.position.set(x,y,z);g.add(m);return m};
- add(new T.Mesh(new T.BoxGeometry(2.4,.9,.95),wd),0,.45,0);for(let i=0;i<5;i++)add(new T.Mesh(new T.BoxGeometry(.38,.22,.38),gd[i%gd.length]),-.95+i*.47,1.02,0);
- [-1.1,1.1].forEach(x=>add(new T.Mesh(new T.CylinderGeometry(.05,.05,2.4,6),wd),x,1.2,.4));const awn=add(new T.Mesh(new T.BoxGeometry(2.9,.1,1.7),aw),0,2.4,.1);awn.rotation.x=-.12;return g}
+function stallProp(col,goods,title){
+  const g=new T.Group(),wd=L(0x8a5a36),aw=L(col),gd=goods.map(c=>L(c)),add=(m,x,y,z)=>{m.position.set(x,y,z);g.add(m);return m};
+  add(new T.Mesh(new T.BoxGeometry(2.4,.9,.95),wd),0,.45,0);for(let i=0;i<5;i++)add(new T.Mesh(new T.BoxGeometry(.38,.22,.38),gd[i%gd.length]),-.95+i*.47,1.02,0);
+  [-1.1,1.1].forEach(x=>add(new T.Mesh(new T.CylinderGeometry(.05,.05,2.4,6),wd),x,1.2,.4));const awn=add(new T.Mesh(new T.BoxGeometry(2.9,.1,1.7),aw),0,2.4,.1);awn.rotation.x=-.12;
+  if(title){const parts=title.split('|'),tex=cv(320,100,q=>{q.fillStyle='#283d35';q.fillRect(0,0,320,100);q.strokeStyle='#edcc83';q.lineWidth=5;q.strokeRect(4,4,312,92);q.fillStyle='#fff6e5';q.textAlign='center';q.textBaseline='middle';q.font='bold 27px Cairo, sans-serif';q.fillText(parts[0],160,35,292);q.font='bold 20px Cairo, sans-serif';q.fillStyle='#edcc83';q.fillText('صاحبه '+(parts[1]||''),160,70,292)});tex.encoding=T.sRGBEncoding;tex.needsUpdate=true;const sign=new T.Mesh(new T.PlaneGeometry(2.7,.84),new T.MeshBasicMaterial({map:tex,side:T.DoubleSide}));sign.position.set(0,2.92,.13);g.add(sign)}
+  return g
+}
 function benchAt(g,x,z,ry){const o=new T.Group(),seat=new T.Mesh(new T.BoxGeometry(1.5,.08,.5),benchWood),back=new T.Mesh(new T.BoxGeometry(1.5,.5,.06),benchWood);seat.position.y=.46;back.position.set(0,.74,.22);o.add(seat,back);
  [-.65,.65].forEach(px=>{const l=new T.Mesh(new T.BoxGeometry(.06,.46,.46),benchMetal);l.position.set(px,.23,0);o.add(l)});o.position.set(x,0,z);o.rotation.y=ry;g.add(o)}
 function palm(g,x,z,hh){const t=new T.Mesh(new T.CylinderGeometry(.18,.3,hh,7),palmT);t.position.set(x,hh/2,z);g.add(t);for(let i=0;i<7;i++){const a=i/7*Math.PI*2,l=new T.Mesh(new T.BoxGeometry(.35,.06,2.8),palmL);l.position.set(x+Math.sin(a)*1.1,hh+.1,z+Math.cos(a)*1.1);l.rotation.y=a;l.rotation.x=-.5;g.add(l)}}
@@ -666,7 +670,7 @@ function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(
   q.strokeStyle='rgba(12,12,14,.5)';q.lineWidth=1;for(let c=0;c<9;c++){let x=(c*29+13)%256,y=(c*53+22)%512;q.beginPath();q.moveTo(x,y);for(let k=0;k<5;k++){x+=(c%2?1:-1)*(2+(k%3));y+=3+k%2;q.lineTo(x,y)}q.stroke()}
  });asT.encoding=T.sRGBEncoding;asT.needsUpdate=true;asT.wrapS=asT.wrapT=T.RepeatWrapping;asT.repeat.set(1,19);asT.anisotropy=Math.min(8,R.capabilities.getMaxAnisotropy());
  const asM=L(0xffffff,{map:asT}),SWM=L(0x827b70),CURB=L(0x70695f),jointM=L(0x625b52),zebM=new T.MeshBasicMaterial({color:0xf4f1e8}),laneWhite=new T.MeshBasicMaterial({color:0xded8c9}),laneGold=new T.MeshBasicMaterial({color:0xe0bf74}),bikeCols=[0xc0392b,0x2980b9,0xecf0f1,0x27ae60,0xf1c40f,0x7f8c8d],tireM=L(0x1e1e22),bikeSteelM=L(0x9ca6aa),bikeSkinM=L(0xc58a69);
- const signNames=['مخبز','صيدلية','بقالة','حلويات','مكتبة','عطارة'],signM=signNames.map((nm,k)=>new T.MeshBasicMaterial({map:cv(256,56,q=>{q.fillStyle=['#8a2b22','#1f5f8a','#2c7a45','#a0428a','#6b4a2a','#2c6b6b'][k];q.fillRect(0,0,256,56);q.fillStyle='#fff';q.strokeStyle='#e9c46a';q.lineWidth=3;q.strokeRect(4,4,248,48);q.font='bold 36px sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillText(nm,128,30)})}));signM.forEach(m=>{if(m.map){m.map.encoding=T.sRGBEncoding;m.map.needsUpdate=true}});
+ const signNames=['خبز الصباح · أبو علي','صيدلية الشفاء · د. سامي','خضار أمينة · أم رامي','حلويات سكر · أم ليلى','مكتبة الحكمة · عم حسن','عطارة البركة · الحاج محمود'],signM=signNames.map((nm,k)=>new T.MeshBasicMaterial({map:cv(256,56,q=>{q.fillStyle=['#8a2b22','#1f5f8a','#2c7a45','#a0428a','#6b4a2a','#2c6b6b'][k];q.fillRect(0,0,256,56);q.fillStyle='#fff';q.strokeStyle='#e9c46a';q.lineWidth=3;q.strokeRect(4,4,248,48);q.font='bold 23px Cairo, sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillText(nm,128,30,226)})}));signM.forEach(m=>{if(m.map){m.map.encoding=T.sRGBEncoding;m.map.needsUpdate=true}});
  for(let a=0;a<5;a++){const ns=new T.Mesh(new T.PlaneGeometry(10,156,1,6).rotateX(-Math.PI/2),asM);ns.position.set(LN[a],.04,WZ);g.add(ns);const ew=new T.Mesh(new T.PlaneGeometry(10,156,1,6).rotateX(-Math.PI/2).rotateY(Math.PI/2),asM);ew.position.set(0,.045,NZ[a]);g.add(ew)}
  // On-foot road markings: lane edges, broken centre lines and zebra crossings at the inner junctions.
  for(let a=0;a<5;a++){
@@ -675,27 +679,7 @@ function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(
   for(const side of[-1,1]){const edge=new T.Mesh(new T.BoxGeometry(151,.025,.08),laneWhite);edge.position.set(0,.055,NZ[a]+side*4.55);g.add(edge)}
   for(let x=-72;x<72;x+=10){const dash=new T.Mesh(new T.BoxGeometry(3.7,.028,.095),laneGold);dash.position.set(x+1.4,.058,NZ[a]);g.add(dash)}
  }
- // Green-blue bands and dashed boundaries designate bicycle-only lanes.
- const bikeLaneMat=new T.MeshBasicMaterial({color:0x3e625b,transparent:true,opacity:.88,depthWrite:false});
- const bikeLaneEdge=new T.MeshBasicMaterial({color:0xa9c8ac,transparent:true,opacity:.9,depthWrite:false});
- for(let a=0;a<5;a++)for(const side of[-1,1]){
-  const ns=new T.Mesh(new T.PlaneGeometry(1.55,151).rotateX(-Math.PI/2),bikeLaneMat);
-  ns.position.set(LN[a]+side*3.32,.047,WZ);g.add(ns);
-  const ew=new T.Mesh(new T.PlaneGeometry(151,1.55).rotateX(-Math.PI/2),bikeLaneMat);
-  ew.position.set(0,.047,NZ[a]+side*3.32);g.add(ew);
-  const edge1=new T.Mesh(new T.BoxGeometry(.035,.018,151),bikeLaneEdge);
-  edge1.position.set(LN[a]+side*2.42,.056,WZ);g.add(edge1);
-  const edge2=new T.Mesh(new T.BoxGeometry(151,.018,.035),bikeLaneEdge);
-  edge2.position.set(0,.056,NZ[a]+side*2.42);g.add(edge2);
-  for(let z=WZ-70;z<WZ+72;z+=13){
-   const mark=new T.Mesh(new T.BoxGeometry(.06,.018,2.3),laneWhite);
-   mark.position.set(LN[a]+side*4.15,.057,z);g.add(mark)
-  }
-  for(let x=-70;x<72;x+=13){
-   const mark=new T.Mesh(new T.BoxGeometry(2.3,.018,.06),laneWhite);
-   mark.position.set(x,.057,NZ[a]+side*4.15);g.add(mark)
-  }
- }
+  // Removed artificial green/white lane overlays that produced glowing bands.
  for(let a=1;a<4;a++)for(let b=1;b<4;b++)for(const side of[-1,1])for(let k=-2;k<=2;k++){
   const v=new T.Mesh(new T.BoxGeometry(6.9,.035,.34),zebM);v.position.set(LN[a],.063,NZ[b]+side*(5.1+k*.5));g.add(v);
   const h=new T.Mesh(new T.BoxGeometry(.34,.035,6.9),zebM);h.position.set(LN[a]+side*(5.1+k*.5),.064,NZ[b]);g.add(h)
@@ -950,8 +934,14 @@ function npcUpdate(n,dt){const u=n.userData;{const fd=Math.hypot(n.position.x-WK
  else if(u.mode==='talk'){walkBodyPose(u.bones,{ar:.45+.35*Math.sin(t*2.1+u.ph),al:.2+.2*Math.sin(t*1.7+u.ph*1.3),lean:.03,twist:.07*Math.sin(t*.9+u.ph)});setHumanEmotion(n,Math.sin(t*1.7+u.ph)>.72?'laugh':'happy');posed=true}
  else if(u.mode==='argue'){walkBodyPose(u.bones,{ar:.9+.5*Math.sin(t*5+u.ph),al:.7+.5*Math.sin(t*4.2+u.ph),lean:.1,twist:.1*Math.sin(t*3+u.ph)});setHumanEmotion(n,'sad');posed=true}
  else if(u.mode==='run'){if(Math.hypot(WK.x-n.position.x,WK.z-n.position.z)<1.7){walkBodyPose(u.bones,{});posed=true}else{u.a+=dt*u.w;const sx=WK.world.sx,sz=WK.world.sz;n.position.set(sx+Math.cos(u.a)*u.r,WALK_Y,sz+Math.sin(u.a)*u.r);n.rotation.y=Math.atan2(-Math.sin(u.a),Math.cos(u.a))*(u.w>0?1:-1);u.ph+=dt*11;walkBodyPose(u.bones,walkOff(u.ph,.5));posed=true}}
- if(u.waveAmt>.01){if(!posed)walkBodyPose(u.bones,{});u.waveBone.quaternion.multiply(qZ(-(1.9+Math.sin(t*8)*.32)*u.waveAmt))}}
-function showDlg(ar,en,ch){menuOpen=true;menuMode='dlg';WK.dlg=ch;$t.style.opacity=0;$menu.innerHTML='<div class="walk-dialog" dir="rtl"><span>'+ar+'</span>'+ch.map((c,i)=>'<button data-i="'+i+'">'+c.t+'</button>').join('')+'</div>';$menu.style.display='flex'}
+ if(u.waveAmt>.01){if(!posed)walkBodyPose(u.bones,{});u.waveBone.quaternion.multiply(qZ((1.45+Math.sin(t*8)*.16)*u.waveAmt))}}
+function showDlg(ar,en,ch){
+  menuOpen=true;menuMode='dlg';WK.dlg=ch;$t.style.opacity=0;
+  const speaker=ar.includes('أمك:')?'أمك':ar.includes('أنت:')?'حديث مع صاحب المتجر':ar.includes('عجوز:')?'الجارة الكبيرة':ar.includes('قطة')?'موقف جديد':'حوار';
+  const display=String(ar||'').replace(/\n/g,'<br>');
+  $menu.innerHTML='<div class="walk-dialog" dir="rtl"><div class="dlg-heading"><div class="dlg-avatar">'+(speaker==='أمك'?'أم':speaker==='حديث مع صاحب المتجر'?'✦':'حوار')+'</div><div class="dlg-heading-copy"><small>ساعي الخير · حوار</small><strong>'+speaker+'</strong></div><div class="dlg-close">⋯</div></div><div class="dlg-text">'+display+'</div><div class="dlg-choices">'+ch.map((c,i)=>'<button data-i="'+i+'"><span class="dlg-choice-number">'+(['١','٢','٣','٤'][i]||String(i+1))+'</span><span>'+c.t+'</span><span class="dlg-choice-arrow">←</span></button>').join('')+'</div></div>';
+  $menu.style.display='flex'
+}
 function dlgChoice(i){const c=WK&&WK.dlg&&WK.dlg[i];closeMenu();if(c&&c.fn)c.fn()}
 function pay(n,msg){money+=n;SV.money=money;svSave();if(n>0){fan();coin()}if(msg)say(msg)}
 function greet(n){const u=n.userData;u.waveTarget=1;u.waveT=2.4;setHumanEmotion(n,'happy');setHumanEmotion(WK&&WK.boy,'happy');SV.salams=(SV.salams||0)+1;svSave();say('السلام عليكم  ←  '+['وعليكم السلام ورحمة الله وبركاته','وعليكم السلام يا بني','أهلاً بك يا ولدي'][(Math.random()*3)|0]);if(Math.random()<.2){pay(5)}}
@@ -971,25 +961,24 @@ function evCat(it){const ev=it.ev;if(ev.done)return say('تخرخر القطة �
 function evArgue(it){const ev=it.ev;if(ev.done)return say('تصالح الجاران وتصافحا مبتسمين.');
  showDlg('رجلان يتجادلان بصوت عالٍ…','Two neighbors are arguing loudly over a small matter.',[{t:'السلام عليكم… هلّا هدأتما؟ 🕊',fn:()=>{ev.done=true;ev.npcs.forEach(n=>{n.userData.mode='stand';n.userData.waveTarget=1;n.userData.waveT=3});SV.peace=(SV.peace||0)+1;pay(30,'«فَاتَّقُوا اللَّهَ وَأَصْلِحُوا ذَاتَ بَيْنِكُمْ» (الأنفال ١)   \u2066+¥30\u2069')}},{t:'أصرخ عليهما',fn:()=>say('رفع الصوت يزيد الخلاف. جرّب الكلام الهادئ.')},{t:'أمضي في طريقي',fn:()=>{}}])}
 function startPrayerWalk(){const w=WK;w.pray={t:0,k:pCur};w.boy.visible=false;$('pray').style.display='flex'}
-const ERR=[{id:'baker',ar:'الخبّاز',itemAr:'خبزًا للعشاء',en:'bread',cost:25,kind:'elder',col:0xe07a2f,sx:4.9,zl:-20,rot:Math.PI/2,vx:5.7,ix:3.4},{id:'grocer',ar:'البقّال',itemAr:'خضارًا للغداء',en:'vegetables',cost:40,kind:'owner',col:0x2f9a5a,sx:-40.9,zl:40,rot:-Math.PI/2,vx:-41.7,ix:-38.6},{id:'pharm',ar:'الصيدلي',itemAr:'دواءً لأختك',en:'medicine for your sister',cost:60,kind:'medic',col:0x2f7fd6,sx:40.9,zl:-20,rot:Math.PI/2,vx:41.7,ix:38.6},{id:'books',ar:'صاحب المكتبة',itemAr:'دفترًا لأختك',en:'a notebook for your sister',cost:15,kind:'elder',col:0xf2c230,sx:-4.9,zl:-50,rot:-Math.PI/2,vx:-5.7,ix:-2.6}];
+const ERR=[{id:'baker',ar:'الخبّاز أبو علي',shopName:'خبز الصباح',ownerName:'أبو علي',itemAr:'خبزًا للعشاء',en:'bread',cost:25,kind:'elder',col:0xe07a2f,sx:4.9,zl:-20,rot:Math.PI/2,vx:5.7,ix:3.4},{id:'grocer',ar:'البقّال أبو رامي',shopName:'خيرات الحارة',ownerName:'أبو رامي',itemAr:'خضارًا للغداء',en:'vegetables',cost:40,kind:'owner',col:0x2f9a5a,sx:-40.9,zl:40,rot:-Math.PI/2,vx:-41.7,ix:-38.6},{id:'pharm',ar:'الصيدلي سامي',shopName:'صيدلية الشفاء',ownerName:'د. سامي',itemAr:'دواءً لأختك',en:'medicine for your sister',cost:45,kind:'medic',col:0x2f7fd6,sx:40.9,zl:-20,rot:Math.PI/2,vx:41.7,ix:38.6},{id:'books',ar:'بائع الكتب عم حسن',shopName:'مكتبة الحكمة',ownerName:'عم حسن',itemAr:'دفترًا لأختك',en:'a notebook for your sister',cost:15,kind:'elder',col:0xf2c230,sx:-4.9,zl:-50,rot:-Math.PI/2,vx:-5.7,ix:-2.6}];
 function activeWalkObjective(w=WK){if(!w)return null;const id=(pPending&&!pDone)?'mosque':w.q===1?ERR[w.err].id:'mom';return w.items.find(i=>i.id===id)||null}
 function makeWalkGoalMarker(){const g=new T.Group(),gold=disableTownTerrainWarp(new T.MeshBasicMaterial({color:0xffd166,transparent:true,opacity:.96,depthWrite:false,toneMapped:false})),beamM=disableTownTerrainWarp(new T.MeshBasicMaterial({color:0xffd166,transparent:true,opacity:.16,depthWrite:false,side:T.DoubleSide,toneMapped:false})),ring=new T.Mesh(new T.TorusGeometry(.78,.075,8,28),gold.clone()),beam=new T.Mesh(new T.CylinderGeometry(.09,.34,2.35,10,1,true),beamM),cap=new T.Mesh(new T.OctahedronGeometry(.22),gold.clone());ring.rotation.x=Math.PI/2;ring.position.y=.08;beam.position.y=1.25;cap.position.y=2.6;g.add(beam,ring,cap);g.userData={ring,beam,cap};return g}
 function updateWalkGoalMarker(w,dt){const m=w&&w.goalMarker,o=activeWalkObjective(w);if(!m)return;if(!o){m.visible=false;return}m.visible=true;m.position.set(o.x,0,o.z);const d=Math.hypot(w.x-o.x,w.z-o.z),p=.88+.14*Math.sin(t*2.8);m.userData.ring.scale.setScalar(p);m.userData.cap.position.y=2.55+.16*Math.sin(t*3.2);m.userData.ring.material.opacity=d<2.8?.22:.96;m.userData.beam.material.opacity=d<5?.035:.16;m.userData.cap.material.opacity=d<2.8?.28:.96}
 function updQuest(){const w=WK;if(!w)return;const e=ERR[w.err];let head,ar;if(pPending&&!pDone){head='مهمة عاجلة · الصلاة';ar='اذهب إلى المسجد في الساحة وأدِّ الصلاة، ثم أكمل مشوار الأسرة من حيث توقفت.'}else if(w.q===0){head='المشوار الرئيسي · ١ من ٣';ar='البداية من المنزل: تحدّث مع أمك وخذ طلب الأسرة ومصروف الشراء.'}else if(w.q===1){head='المشوار الرئيسي · ٢ من ٣';ar='الوجهة التالية: '+e.ar+'. اشترِ '+e.itemAr+' بالمبلغ الذي أعطتك أمك.'}else{head='المشوار الرئيسي · ٣ من ٣';ar='العودة إلى المنزل: سلّم '+e.itemAr+' لأمك لتحصل على مكافأة المشوار.'}setH($m,'<b>'+head+'</b><span class="mission-copy">'+ar+'</span>')}
 function talkMom(){const w=WK,e=ERR[w.err];
- if(w.q===0)showDlg('أمك: «يا بني، نحتاج '+e.itemAr+' من '+e.ar+'. خذ '+(e.cost+20)+' جنيهًا، واشترِ المطلوب ثم أحضره إلى البيت.»','',[{t:'حاضر يا أمي',fn:()=>{pay(e.cost+20,'أعطتك أمك '+(e.cost+20)+' جنيهًا. اتبع السهم الذهبي إلى '+e.ar+'.');w.q=1;updQuest()}}]);
- else if(w.q===1)showDlg('أمك: «'+e.ar+' ينتظرك يا بني»','',[{t:'حسنًا، سأذهب إليه',fn:()=>{}},{t:'أحتاج إلى بقية المال',fn:()=>{if(money<e.cost){const extra=e.cost-money+5;pay(extra,'أعطتك أمك '+extra+' لتكمل شراء '+e.itemAr+'.')}else say('معك ما يكفي لشراء المطلوب.')}}]);
- else if(w.q===2&&w.item)showDlg('أمك: «الحمد لله، أحضرتَ '+e.itemAr+'! بارك الله فيك يا بني.»','',[{t:'تفضّلي يا أمي',fn:()=>{w.item=false;syncHeldErrandItem(w);SV.errands=(SV.errands||0)+1;pay(40,'فرحت أمك لأنك أحضرت '+e.itemAr+'. مكافأة المشوار: ٤٠ جنيهًا.');w.err=(w.err+1)%ERR.length;w.q=0;updQuest()}}]);
- else showDlg('أمك: «لا تتأخر، وصلِّ في وقتها يا بني»','',[{t:'إن شاء الله',fn:()=>{}}])}
+  if(w.q===0)showDlg('أمك: «يا بني، نحتاج '+e.itemAr+' من '+e.shopName+' عند '+e.ownerName+'. خذ ٥٠ جنيهًا، واشترِ المطلوب، ثم أعد إليّ الباقي مع المشتريات.»','',[{t:'حاضر يا أمي · أخذ ٥٠ جنيهًا',fn:()=>{w.errandBudget=50;w.changeDue=0;pay(50,'أعطتك أمك ٥٠ جنيهًا. سعر '+e.itemAr+' '+e.cost+' جنيهًا؛ احسب الباقي وأعده لها. اتبع العلامة الذهبية إلى '+e.shopName+'.');w.q=1;updQuest()}}]);
+  else if(w.q===1)showDlg('أمك: «متجر '+e.shopName+' عند '+e.ownerName+'. '+(e.cost>(w.errandBudget||0)?'ثمن المطلوب أكبر من المبلغ معك؛ عُد إليّ لأعطيك الفرق.':'معك ما يكفي، ولا تنسَ إحضار الباقي.')+'»','',[{t:'سأذهب إلى المتجر',fn:()=>{}},{t:'أحتاج '+Math.max(0,e.cost-(w.errandBudget||0))+' جنيهًا إضافية',fn:()=>{const extra=Math.max(0,e.cost-(w.errandBudget||0));if(extra){w.errandBudget=(w.errandBudget||0)+extra;pay(extra,'أعطتك أمك '+extra+' جنيهات إضافية بالضبط؛ أصبح المبلغ '+w.errandBudget+' جنيهًا.')}else say('معك ما يكفي لشراء المطلوب؛ اذهب إلى المتجر.')}}]);
+  else if(w.q===2&&w.item)showDlg('أمك: «الحمد لله، أحضرتَ '+e.itemAr+'! ثمنه '+e.cost+' جنيهًا، والباقي '+(w.changeDue||0)+' جنيهًا. أعدتَ الباقي؟»','',[{t:'تفضّلي بالمشتريات والباقي · '+(w.changeDue||0)+' جنيهًا',fn:()=>{const change=w.changeDue||0;if(change>0)pay(-change);w.changeDue=0;w.item=false;syncHeldErrandItem(w);SV.errands=(SV.errands||0)+1;pay(40,'أحسنت! أعدتَ الباقي كاملًا. مكافأة إنجاز المشوار: ٤٠ جنيهًا.');w.err=(w.err+1)%ERR.length;w.q=0;w.errandBudget=0;updQuest()}}]);
+  else showDlg('أمك: «لا تتأخر، وصلِّ في وقتها يا بني»','',[{t:'إن شاء الله',fn:()=>{}}])}
 function talkShop(i){const w=WK,e=ERR[i],shopItem=w.items.find(it=>it.id===e.id),vendor=shopItem&&shopItem.npc;
- if(w.q!==1||w.err!==i||w.item){setHumanEmotion(vendor,'neutral');return say(w.item?'المشتريات معك بالفعل؛ عُد بها إلى أمك.':'هذا ليس المتجر المطلوب الآن. اتبع السهم الذهبي إلى '+ERR[w.err].ar+'.')}
- const ask={baker:'أريد عيشًا طازجًا بخمسةٍ وعشرين جنيهًا، لو سمحت.',grocer:'أريد خضارًا طازجة بأربعين جنيهًا، من فضلك.',pharm:'أريد دواءً لأختي بستين جنيهًا، لو سمحت.',books:'أريد كراسةً لأختي بخمسة عشر جنيهًا، من فضلك.'}[e.id];
- const response={baker:'اتفضل يا بني، عيش طازج ولسه سخن. الحساب خمسة وعشرون جنيهًا.',grocer:'اتفضل يا بني، خضار طازجة ونظيفة. الحساب أربعون جنيهًا.',pharm:'حاضر يا بني، هذا الدواء المطلوب لأختك. الحساب ستون جنيهًا.',books:'اتفضل يا بني، كراسة جديدة ونظيفة. الحساب خمسة عشر جنيهًا.'}[e.id];
- const itemLabel={baker:'العيش الطازج',grocer:'الخضار الطازجة',pharm:'دواء أختك',books:'الكراسة'}[e.id];
- const role=e.id==='baker'?'الخبّاز':e.id==='grocer'?'البقّال':e.id==='pharm'?'الصيدلي':'بائع الكتب';
- setHumanEmotion(vendor,'happy');setHumanEmotion(w.boy,'happy');
- showDlg('أنت: «السلام عليكم يا عمّ الحاج.»\n\n'+role+': «وعليكم السلام يا بني، أهلًا بك. ماذا تريد؟»','',[{t:ask,fn:()=>{setHumanEmotion(w.boy,'neutral');showDlg('أنت: «'+ask+'»\n\n'+role+': «'+response+'»','',[{t:'أشتري '+itemLabel+' · '+e.cost+' جنيهًا',fn:()=>{if(money<e.cost){setHumanEmotion(vendor,'sad');return say('المبلغ الذي معك لا يكفي. عُد إلى أمك واطلب بقية المال.')}pay(-e.cost);w.item=true;w.q=2;syncHeldErrandItem(w);updQuest();setHumanEmotion(vendor,'happy');setHumanEmotion(w.boy,'happy');say('اشتريت '+itemLabel+'، وأصبحت معك في يدك. ارجع إلى أمك وسلّمها المشتريات.')}},{t:'شكرًا، سأعود لاحقًا',fn:()=>{setHumanEmotion(vendor,'neutral')}}])}}])
-}
+  if(w.q!==1||w.err!==i||w.item){setHumanEmotion(vendor,'neutral');return say(w.item?'المشتريات معك بالفعل؛ عُد بها إلى أمك.':'هذا ليس المتجر المطلوب الآن. اتبع العلامة الذهبية إلى '+ERR[w.err].shopName+'.')}
+  const ask={baker:'أريد عيشًا طازجًا بخمسةٍ وعشرين جنيهًا، لو سمحت.',grocer:'أريد خضارًا طازجة بأربعين جنيهًا، من فضلك.',pharm:'أريد دواءً لأختي بخمسةٍ وأربعين جنيهًا، لو سمحت.',books:'أريد كراسةً لأختي بخمسة عشر جنيهًا، من فضلك.'}[e.id];
+  const response={baker:'اتفضل يا بني، عيش طازج ولسه سخن. الحساب ٢٥ جنيهًا.',grocer:'اتفضل يا بني، خضار طازجة ونظيفة. الحساب ٤٠ جنيهًا.',pharm:'حاضر يا بني، هذا الدواء المطلوب لأختك. الحساب ٤٥ جنيهًا.',books:'اتفضل يا بني، كراسة جديدة ونظيفة. الحساب ١٥ جنيهًا.'}[e.id];
+  const itemLabel={baker:'العيش الطازج',grocer:'الخضار الطازجة',pharm:'دواء أختك',books:'الكراسة'}[e.id],role=e.ownerName+'، صاحب '+e.shopName;
+  setHumanEmotion(vendor,'happy');setHumanEmotion(w.boy,'happy');
+  showDlg('أنت: «السلام عليكم يا '+e.ownerName+'، ما اسم متجرك؟»\n\n'+role+': «وعليكم السلام يا بني، أهلًا بك في '+e.shopName+'. ماذا تريد؟»','',[{t:ask,fn:()=>{setHumanEmotion(w.boy,'neutral');showDlg('أنت: «'+ask+'»\n\n'+role+': «'+response+'»','',[{t:'أشتري '+itemLabel+' · '+e.cost+' جنيهًا',fn:()=>{const budget=w.errandBudget||0;if(budget<e.cost){setHumanEmotion(vendor,'sad');return say('معك '+budget+' جنيهًا، والسعر '+e.cost+'؛ ينقصك '+(e.cost-budget)+' جنيهًا. عُد إلى أمك أولًا.')}pay(-e.cost);w.errandBudget=budget-e.cost;w.changeDue=w.errandBudget;w.item=true;w.q=2;syncHeldErrandItem(w);updQuest();setHumanEmotion(vendor,'happy');setHumanEmotion(w.boy,'happy');say('الحساب: '+budget+' − '+e.cost+' = '+w.changeDue+' جنيهًا باقيًا. احتفظ بالباقي لتعيده إلى أمك مع '+itemLabel+'.')}},{t:'شكرًا، سأعود لاحقًا',fn:()=>{setHumanEmotion(vendor,'neutral')}}])}}])
+ }
 let walkShadowCellX=NaN,walkShadowCellZ=NaN;
 function syncWalkShadowAnchor(x,z,force=false){const gx=Math.floor(x/24),gz=Math.floor((z-WZ)/24);if(!force&&gx===walkShadowCellX&&gz===walkShadowCellZ)return;walkShadowCellX=gx;walkShadowCellZ=gz;const tx=gx*24,tz=WZ+gz*24;sunL.position.set(tx-34,36,tz-48);sunL.target.position.set(tx,0,tz);sunL.target.updateMatrixWorld();R.shadowMap.needsUpdate=true}
 function configureWalkVisuals(x,z){gnd.visible=false;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.08;R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;S.fog.near=38;S.fog.far=300;sunL.castShadow=true;gnd.receiveShadow=true;sunL.shadow.mapSize.set((navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512,(navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512);sunL.shadow.camera.left=-38;sunL.shadow.camera.right=38;sunL.shadow.camera.top=34;sunL.shadow.camera.bottom=-16;sunL.shadow.camera.near=.5;sunL.shadow.camera.far=240;sunL.shadow.camera.updateProjectionMatrix();syncWalkShadowAnchor(x,z,true)}
@@ -1006,8 +995,17 @@ function startWalkMode(){started=true;walkMode=true;document.body.classList.add(
  [[31.2,-12,1],[-40.8,20,1],[-67.6,20,1],[-52,-31.2,0],[20,4.8,0]].forEach((q,i)=>{const a=mkNPC(kinds[(i+1)%5],true),b=mkNPC(kinds[(i+3)%5],true);if(!a||!b)return;const ax=q[2]===0;a.position.set(q[0]-(ax?.55:0),WALK_Y,Zl(q[1])-(ax?0:.55));b.position.set(q[0]+(ax?.55:0),WALK_Y,Zl(q[1])+(ax?0:.55));a.rotation.y=ax?Math.PI/2:0;b.rotation.y=ax?-Math.PI/2:Math.PI;a.userData.mode=b.userData.mode='talk';w.npcs.push(a,b)});
  for(let i=0;i<4;i++){const n=mkNPC('kid',true);if(!n)continue;const u=n.userData;u.mode='run';u.a=i*1.6;u.r=4.2+i*1.1;u.w=(i%2?1:-1)*(.55+i*.08);w.npcs.push(n)}
  [[W.sx-5,W.sz,-Math.PI/2],[W.sx+5,W.sz,Math.PI/2]].forEach(q=>{const n=mkNPC('elder',false,'sit');if(!n)return;n.position.set(q[0],WALK_Y,q[1]);n.rotation.y=q[2]+Math.PI;n.userData.mode='sit';w.npcs.push(n)});
- const hd=doorProp();hd.position.set(-65.9,0,Zl(-52));hd.rotation.y=Math.PI/2;PG.add(hd);const mom=mk('owner',-67.6,-50,-Math.PI/2);it('mom',-67.6,-50,'Talk to Mom',talkMom,{npc:mom});
- ERR.forEach((e,i)=>{const st=stallProp(e.col,[0xc99a5b,0xd8b073,0x6bbf59,0xd94b3d]);st.position.set(e.sx,0,Zl(e.zl));st.rotation.y=e.rot;PG.add(st);w.rects.push({x0:e.sx-.6,x1:e.sx+.6,z0:Zl(e.zl)-1.25,z1:Zl(e.zl)+1.25});const v=mk(e.kind,e.vx,e.zl,-e.rot);it(e.id,e.ix,e.zl,'Talk to the '+e.ar,()=>talkShop(i),{npc:v})});
+ const homeX=-65.9,homeZ=Zl(-52),homeWall=L(0xd8c2a4),homeTrim=L(0x78583f),homeRoof=L(0x55464a);
+ [-2.55,2.55].forEach(dz=>{const wall=new T.Mesh(new T.BoxGeometry(.28,3.35,2.85),homeWall);wall.position.set(homeX,1.675,homeZ+dz);PG.add(wall)});
+ const lintel=new T.Mesh(new T.BoxGeometry(.3,.58,2.3),homeTrim);lintel.position.set(homeX,3.08,homeZ);PG.add(lintel);
+ [-4.05,4.05].forEach(dz=>{const side=new T.Mesh(new T.BoxGeometry(6.1,3.35,.3),homeWall);side.position.set(homeX+3.05,1.675,homeZ+dz);PG.add(side)});
+ const back=new T.Mesh(new T.BoxGeometry(.3,3.35,8.4),homeWall);back.position.set(homeX+6.1,1.675,homeZ);PG.add(back);
+ const roof=new T.Mesh(new T.BoxGeometry(6.5,.3,9),homeRoof);roof.position.set(homeX+3.05,3.52,homeZ);PG.add(roof);
+ const hd=doorProp();hd.position.set(homeX,0,Zl(-52));hd.rotation.y=Math.PI/2;PG.add(hd);
+ w.rects.push({x0:homeX-.34,x1:homeX+.22,z0:homeZ-1.08,z1:homeZ+1.08});
+ w.rects.push({x0:homeX+.15,x1:homeX+6.35,z0:homeZ-4.25,z1:homeZ+4.25});
+ const mom=mk('owner',-67.6,-50,-Math.PI/2);it('mom',-67.6,-50,'Talk to Mom',talkMom,{npc:mom});
+ ERR.forEach((e,i)=>{const st=stallProp(e.col,[0xc99a5b,0xd8b073,0x6bbf59,0xd94b3d],e.shopName+'|'+e.ownerName);st.position.set(e.sx,0,Zl(e.zl));st.rotation.y=e.rot;PG.add(st);w.rects.push({x0:e.sx-.6,x1:e.sx+.6,z0:Zl(e.zl)-1.25,z1:Zl(e.zl)+1.25});const v=mk(e.kind,e.vx,e.zl,-e.rot);it(e.id,e.ix,e.zl,'Talk to the '+e.ar,()=>talkShop(i),{npc:v})});
  const ow=mk('owner',-31.2,-10,-Math.PI/2),dd=doorProp();dd.position.set(-30.1,0,Zl(-58));dd.rotation.y=Math.PI/2;PG.add(dd);[[-.6,.6],[-.4,-.3]].forEach((o,k)=>{const b=new T.Mesh(new T.BoxGeometry(.4,.5,.3),bagM[k]);b.position.set(-31.2+o[0],.25,Zl(-10)+o[1]);PG.add(b)});
  it('ow',-31.2,-10,'Talk to the old woman',evOldWoman,{ev:{npc:ow,dest:{x:-31.4,z:Zl(-58)},done:false}});
  const lc=mk('kid',31.2,-52,Math.PI/2),lm=mk('medic',W.sx,4.8,0);it('lost',31.2,-52,'Talk to the crying boy',evLost,{ev:{npc:lc,dest:{x:W.sx,z:Zl(4.8)},done:false}});
@@ -1086,7 +1084,7 @@ function walkLoop(dt){const w=WK;w.fc=(w.fc||0)+1;
  {const cb=$('clkB');cb.textContent=ramNow()?('🌙 رمضان '+ramDay()+(fastingNow()?' · صائم':'')):(wdNow()===5?'🕌 جمعة مباركة':'');cb.style.display=cb.textContent?'block':'none'}
  setH($('hud'),'الرصيد: '+money+' جنيهًا<br><small style="opacity:.9;font-size:12px">'+(w.item?'معك: '+ERR[w.err].itemAr:'تجوّل وساعد الآخرين')+'</small>');
  const lock=!!(menuOpen||w.pray),fw=(K.KeyW||K.ArrowUp||ptr)?1:0,bw=(K.KeyS||K.ArrowDown)?1:0,tr=ptr?clamp((ptr.x/innerWidth-.5)*2.4,-1,1):((K.KeyD||K.ArrowRight)?1:0)-((K.KeyA||K.ArrowLeft)?1:0),run=K.KeyW||K.ShiftLeft||K.ShiftRight;
- const tgt=lock?0:(fw?(run?6.5:3.5):bw?-1.7:0);w.spd+=(tgt-w.spd)*Math.min(1,(tgt===0?10:7)*dt);if(!lock)w.yaw+=tr*(fw||bw?2.4:3.0)*dt;
+ const tgt=lock?0:(fw?(run?6.5:3.5):bw?-1.7:0);w.spd+=(tgt-w.spd)*Math.min(1,(tgt===0?10:7)*dt);if(!lock)w.yaw-=tr*(fw||bw?2.4:3.0)*dt;
  const fx=Math.sin(w.yaw),fz=Math.cos(w.yaw),nx=w.x+fx*w.spd*dt,nz=w.z+fz*w.spd*dt;if(walkStepAllowed(w.x,w.z,nx,w.z,.35))w.x=nx;else w.spd*=.6;if(walkStepAllowed(w.x,w.z,w.x,nz,.35))w.z=nz;else w.spd*=.6;
  const k2=Math.min(1,Math.abs(w.spd)/6.5);let o;
  if(Math.abs(w.spd)>.12){w.ph+=dt*Math.abs(w.spd)*2.6*(w.spd<0?-1:1);o=walkOff(w.ph,.2+.24*k2);o.lean=(o.lean||0)+.1*k2}else o={lean:.012*Math.sin(t*1.7)};
