@@ -629,7 +629,7 @@ function pickCall(){const hh=hourNow();return(hh>=6.3&&hh<8.8&&Math.random()<.6)
 let walkMode=false,WK=null;
 function disableTownTerrainWarp(mat){if(!mat||mat.userData.walkTownFlat)return mat;const original=mat.onBeforeCompile,oldKey=mat.customProgramCacheKey;mat.onBeforeCompile=function(shader,renderer){if(original)original.call(this,shader,renderer);shader.vertexShader=shader.vertexShader.replace(/\{float hwz=\(modelMatrix\*vec4\(transformed,1\.0\)\)\.z;mvPosition\.xyz\+=\(viewMatrix\*vec4\(0\.0,hillH\(hwz\),0\.0,0\.0\)\)\.xyz;\}\s*/,'')};mat.customProgramCacheKey=function(){return (oldKey?oldKey.call(this):'')+'|town-flat-v1'};mat.userData.walkTownFlat=true;mat.needsUpdate=true;return mat}
 function flattenTownObject(root){root.traverse(o=>{if(!o.isMesh||!o.material)return;o.material=Array.isArray(o.material)?o.material.map(disableTownTerrainWarp):disableTownTerrainWarp(o.material)})}
-const WALK_Y=.075,WZ=-2735,LN=[-72,-36,0,36,72],NZ=LN.map(v=>v+WZ),Zl=v=>v+WZ;
+const WALK_Y=.082,WZ=-2735,LN=[-72,-36,0,36,72],NZ=LN.map(v=>v+WZ),Zl=v=>v+WZ;
 function mkRng(sd){return()=>{sd=(sd*16807)%2147483647;return sd/2147483647}}
 let facM=null;
 function facMats(){if(facM)return facM;
@@ -727,23 +727,82 @@ function npcGroundShadow(scale=1){if(!npcShadowTex){npcShadowTex=cv(128,128,q=>{
  const sh=new T.Mesh(npcShadowGeo,npcShadowMat);sh.position.y=.035;sh.scale.set(scale,scale,1);sh.renderOrder=2;return sh}
 function addFullHijab(m,kind){const head=m.getObjectByName('head');if(!head||head.userData.fullHijab)return;const cloth=L(kind==='medic'?0x263746:0x252a34);cloth.side=T.DoubleSide;cloth.roughness=1;cloth.metalness=0;disableTownTerrainWarp(cloth);const hood=new T.Mesh(new T.SphereGeometry(.19,22,16,2.11,Math.PI*2-1.08,.025,Math.PI-.05),cloth);hood.position.set(0,.15,0);hood.scale.set(1.07,1.18,1.04);hood.frustumCulled=false;const drape=new T.Mesh(new T.ConeGeometry(.19,.39,20,1,true),cloth);drape.position.set(0,-.13,0);drape.scale.set(1.12,1,.88);drape.frustumCulled=false;head.add(hood,drape);head.userData.fullHijab=true}
 function walkBodyPose(b,o){setB(b['leg-left'],qX(-(o.lf||0)));setB(b['leg-right'],qX(-(o.rf||0)));const al=(o.al||0)*.52,ar=(o.ar||0)*.52;setB(b['arm-left'],qZ(al).multiply(qX(al*.22)));setB(b['arm-right'],qZ(ar).multiply(qX(ar*.22)));setB(b.torso,qX(o.lean||0).multiply(qY(o.twist||0)).multiply(qZ(o.roll||0)))}
-function mkNPC(kind,tint,pose){const src=REAL[kind];if(!src)return null;const g=new T.Group(),m=T.SkeletonUtils.clone(src.scene),sc={owner:1.55,medic:1.55,elder:1.6,kid:1.2,boy:1.45}[kind]*(.94+Math.random()*.12);m.scale.setScalar(sc);
- // Retain each model's authored colors while using display-correct color textures in the walking scene.
- if(walkMode){tuneWalkModel(m);if(kind==='owner'||kind==='medic')addFullHijab(m,kind)}
- if(walkMode){const sh=npcGroundShadow(.9+sc*.18);sh.position.y=.035-WALK_Y;g.add(sh)}g.add(m);
+const FRIENDLY_SPHERE=new T.SphereGeometry(1,16,12),FRIENDLY_MATS=Object.create(null);
+function friendlyMat(hex){const key=String(hex);if(!FRIENDLY_MATS[key])FRIENDLY_MATS[key]=disableTownTerrainWarp(new T.MeshLambertMaterial({color:hex}));return FRIENDLY_MATS[key]}
+function friendlyBall(parent,hex,pos,scale,geometry=FRIENDLY_SPHERE){const o=new T.Mesh(geometry,friendlyMat(hex));o.position.set(pos[0],pos[1],pos[2]);o.scale.set(scale[0],scale[1],scale[2]);o.castShadow=false;o.receiveShadow=false;o.frustumCulled=false;parent.add(o);return o}
+function makeFriendlyHuman(kind){
+ const root=new T.Group();root.name='root';
+ const woman=kind==='owner'||kind==='medic',child=kind==='kid'||kind==='boy',old=kind==='elder';
+ const skin=old?0xb98060:child?0xc58a69:kind==='medic'?0xb77758:0xb97858;
+ const cloth=woman?(kind==='medic'?0x526b7b:0x365d55):old?0x788477:child?0x3d8492:0x4075a0;
+ const trousers=old?0x504d49:child?0x344957:0x374352;
+ const hijab=kind==='medic'?0x243b50:0xb9a17e,hair=old?0xc6c2b8:0x44352f;
+ const torso=new T.Group();torso.name='torso';torso.position.y=.98;root.add(torso);
+ friendlyBall(torso,cloth,[0,0,0],[.235,.30,.155]);
+ if(woman){
+  const robe=new T.Mesh(new T.CylinderGeometry(.19,.34,1.0,16),friendlyMat(cloth));robe.position.set(0,-.29,-.005);torso.add(robe);
+  friendlyBall(torso,hijab,[0,.245,-.005],[.16,.105,.14]);
+ }else{
+  const hem=new T.Mesh(new T.CylinderGeometry(.20,.27,.62,14),friendlyMat(cloth));hem.position.set(0,-.08,0);torso.add(hem);
+  friendlyBall(torso,kind==='medic'?0xe8ece8:0xd3c4a1,[.115,.075,.148],[.055,.07,.018]);
+  if(kind==='medic'){friendlyBall(torso,0xc34b50,[.115,.075,.169],[.012,.043,.006]);friendlyBall(torso,0xc34b50,[.115,.075,.17],[.035,.012,.006])}
+ }
+ const neck=new T.Mesh(new T.CylinderGeometry(.065,.085,.20,12),friendlyMat(skin));neck.position.set(0,1.235,0);root.add(neck);
+ const head=new T.Group();head.name='head';head.position.set(0,1.47,0);root.add(head);
+ friendlyBall(head,skin,[0,0,.015],[.255,.285,.225]);
+ if(woman){
+  // Hair-covering hijab: crown, side panels, back and shoulder drape; face stays visible.
+  const cap=new T.Mesh(new T.SphereGeometry(1,18,12,0,Math.PI*2,0,Math.PI*.57),friendlyMat(hijab));cap.position.set(0,.055,-.025);cap.scale.set(.285,.285,.265);head.add(cap);
+  friendlyBall(head,hijab,[-.205,-.095,-.025],[.105,.285,.205]);
+  friendlyBall(head,hijab,[.205,-.095,-.025],[.105,.285,.205]);
+  friendlyBall(head,hijab,[0,-.115,-.12],[.235,.31,.145]);
+  friendlyBall(head,hijab,[0,-.285,-.035],[.335,.145,.175]);
+ }else{
+  const cap=new T.Mesh(new T.SphereGeometry(1,18,12,0,Math.PI*2,0,Math.PI*.49),friendlyMat(hair));cap.position.set(0,.105,-.005);cap.scale.set(.264,.18,.232);head.add(cap);
+  if(old){friendlyBall(head,0xc6c2b8,[-.222,.035,-.005],[.045,.09,.09]);friendlyBall(head,0xc6c2b8,[.222,.035,-.005],[.045,.09,.09])}
+  friendlyBall(head,hair,[-.235,-.005,.015],[.035,.09,.075]);friendlyBall(head,hair,[.235,-.005,.015],[.035,.09,.075]);
+ }
+ for(const side of [-1,1]){
+  const x=side*.088;
+  friendlyBall(head,0xfff8eb,[x,.035,.211],[.041,.047,.022]);
+  friendlyBall(head,0x40332f,[x,.032,.231],[.023,.029,.013]);
+  friendlyBall(head,0xffffff,[x-.006,.044,.243],[.007,.009,.005]);
+ }
+ friendlyBall(head,skin,[0,-.028,.231],[.022,.026,.018]);
+ for(const side of [-1,1])friendlyBall(head,0xd99482,[side*.15,-.062,.187],[.034,.019,.008]);
+ const curve=new T.CatmullRomCurve3([new T.Vector3(-.064,-.097,.207),new T.Vector3(0,-.119,.222),new T.Vector3(.064,-.097,.207)]);
+ head.add(new T.Mesh(new T.TubeGeometry(curve,12,.008,5,false),friendlyMat(0x754d43)));
+ for(const side of [-1,1]){
+  const arm=new T.Group();arm.name=side<0?'arm-left':'arm-right';arm.position.set(side*.235,1.16,0);root.add(arm);
+  friendlyBall(arm,cloth,[0,-.18,0],[.112,.235,.112]);friendlyBall(arm,skin,[0,-.382,.018],[.068,.075,.066]);
+  const leg=new T.Group();leg.name=side<0?'leg-left':'leg-right';leg.position.set(side*.112,.50,0);root.add(leg);
+  friendlyBall(leg,trousers,[0,-.205,0],[.084,.245,.09]);friendlyBall(leg,0x403b37,[0,-.445,.075],[.103,.055,.155]);
+ }
+ return root;
+}
+function mkNPC(kind,tint,pose){
+ const g=new T.Group(),ph=Math.random()*6.28;
+ if(walkMode){
+  const sc={owner:1,medic:1,elder:.98,kid:.78,boy:.9}[kind]||1;
+  const m=makeFriendlyHuman(kind);m.scale.setScalar(sc);
+  const sh=npcGroundShadow(.9+sc*.18);sh.position.y=.003;g.add(sh);g.add(m);
+  g.userData={m,bones:rigBones(m),ph,kind,sc,waveBone:m.getObjectByName('arm-right'),waveAmt:0,waveTarget:0,waveT:0,mode:'stand'};
+  S.add(g);return g
+ }
+ const src=REAL[kind];if(!src)return null;
+ const m=T.SkeletonUtils.clone(src.scene),sc={owner:1.55,medic:1.55,elder:1.6,kid:1.2,boy:1.45}[kind]*(.94+Math.random()*.12);m.scale.setScalar(sc);g.add(m);
  const mixer=new T.AnimationMixer(m),clip=src.animations.find(a=>a.name===(pose||'idle'));if(clip){const a=mixer.clipAction(clip);a.play();a.paused=true;mixer.update(.016)}
  m.traverse(o=>{if(o.isMesh){o.frustumCulled=false;o.castShadow=false;o.receiveShadow=false}});
- g.userData={m,bones:rigBones(m),ph:Math.random()*6.28,kind,sc,waveBone:m.getObjectByName('arm-right'),waveAmt:0,waveTarget:0,waveT:0,mode:'stand'};S.add(g);return g}
+ g.userData={m,bones:rigBones(m),ph,kind,sc,waveBone:m.getObjectByName('arm-right'),waveAmt:0,waveTarget:0,waveT:0,mode:'stand'};S.add(g);return g
+}
 function blocked(x,z,r){r=r||.35;if(Math.abs(x)>77||z<WZ-77||z>WZ+77)return true;const R=WK.rects;for(let i=0;i<R.length;i++){const q=R[i];if(x>q.x0-r&&x<q.x1+r&&z>q.z0-r&&z<q.z1+r)return true}return false}
-function nextNode(u){const nb=[],i=u.node[0],j=u.node[1];[[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{const a=i+d[0],b=j+d[1];if(a>=0&&a<5&&b>=0&&b<5&&!(u.prev&&u.prev[0]===a&&u.prev[1]===b))nb.push([a,b])});const nx=nb.length?nb[(Math.random()*nb.length)|0]:u.prev;u.prev=u.node;u.node=nx;u.tx=LN[nx[0]]+u.off;u.tz=NZ[nx[1]]+u.off}
+function nextNode(u){const nb=[],i=u.node[0],j=u.node[1],rand=u.rng||Math.random;[[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{const a=i+d[0],b=j+d[1];if(a>=0&&a<5&&b>=0&&b<5&&!(u.prev&&u.prev[0]===a&&u.prev[1]===b))nb.push([a,b])});const nx=nb.length?nb[(rand()*nb.length)|0]:u.prev;u.prev=u.node;u.node=nx;u.tx=LN[nx[0]]+u.off;u.tz=NZ[nx[1]]+u.off}
 function npcUpdate(n,dt){const u=n.userData;{const fd=Math.hypot(n.position.x-WK.x,n.position.z-WK.z);const far=fd>58;if(far!==!n.visible){n.visible=!far}if(far&&u.mode!=='walk')return}u.waveAmt+=(u.waveTarget-u.waveAmt)*(1-Math.exp(-7*dt));if(u.waveT>0){u.waveT-=dt;if(u.waveT<=0)u.waveTarget=0}let posed=false;
  if(u.mode==='walk'){const dx=u.tx-n.position.x,dz=u.tz-n.position.z,d=Math.hypot(dx,dz);
-  if(d<.3){if(Math.random()<.3){u.mode='wait';u.wt=1+Math.random()*3}else nextNode(u)}
-  else{let vx=dx/d*u.sp,vz=dz/d*u.sp;const P=WK,ex=n.position.x-P.x,ez=n.position.z-P.z,ed=Math.hypot(ex,ez);
-   if(ed<1.9){const k=(1.9-ed)*1.6;vx+=ex/(ed+.01)*k;vz+=ez/(ed+.01)*k;if(ed<1.2&&(dx*-ex+dz*-ez)>0){vx*=.2;vz*=.2}if(ed<.75){n.position.x+=ex/(ed+.01)*(.75-ed);n.position.z+=ez/(ed+.01)*(.75-ed)}}
-   for(const o of WK.walkers){if(o===n)continue;const fx=n.position.x-o.position.x,fz=n.position.z-o.position.z,fd=Math.hypot(fx,fz);if(fd<1.1&&fd>.01){vx+=fx/fd*(1.1-fd)*1.4;vz+=fz/fd*(1.1-fd)*1.4}}
-   n.position.x+=vx*dt;n.position.z+=vz*dt;const sp=Math.hypot(vx,vz);if(sp>.05)turnYaw(n,Math.atan2(vx,vz),dt);u.ph+=dt*sp*4.8;walkBodyPose(u.bones,walkOff(u.ph,.2+.1*Math.min(sp,1.6)))}posed=true}
+  if(d<.3){const rand=u.rng||Math.random;if(rand()<.3){u.mode='wait';u.wt=1+rand()*3}else nextNode(u)}
+  else{let vx=dx/d*u.sp,vz=dz/d*u.sp;const P=WK,ed=Math.hypot(n.position.x-P.x,n.position.z-P.z);if(ed<1.15){vx=0;vz=0}else if(ed<1.9){vx*=.35;vz*=.35}n.position.x+=vx*dt;n.position.z+=vz*dt;const sp=Math.hypot(vx,vz);if(sp>.05)turnYaw(n,Math.atan2(vx,vz),dt);u.ph+=dt*sp*4.8;walkBodyPose(u.bones,walkOff(u.ph,.2+.1*Math.min(sp,1.6)))}posed=true}
  else if(u.mode==='wait'){u.wt-=dt;if(u.wt<=0){u.mode='walk';nextNode(u)}walkBodyPose(u.bones,{});posed=true}
+  else if(u.mode==='sit'){walkBodyPose(u.bones,{lf:-.9,rf:-.9,lean:.08});posed=true}
  else if(u.mode==='stand'){const b=Math.sin(t*1.25+u.ph);walkBodyPose(u.bones,{lean:.012*b,twist:.018*Math.sin(t*.7+u.ph),al:.025*Math.sin(t*.9+u.ph),ar:.03*Math.cos(t*1.05+u.ph)});posed=true}
  else if(u.mode==='talk'){walkBodyPose(u.bones,{ar:.45+.35*Math.sin(t*2.1+u.ph),al:.2+.2*Math.sin(t*1.7+u.ph*1.3),lean:.03,twist:.07*Math.sin(t*.9+u.ph)});posed=true}
  else if(u.mode==='argue'){walkBodyPose(u.bones,{ar:.9+.5*Math.sin(t*5+u.ph),al:.7+.5*Math.sin(t*4.2+u.ph),lean:.1,twist:.1*Math.sin(t*3+u.ph)});posed=true}
@@ -773,7 +832,7 @@ const ERR=[{id:'baker',ar:'الخبّاز',itemAr:'خبزًا للعشاء',en:'
 function activeWalkObjective(w=WK){if(!w)return null;const id=(pPending&&!pDone)?'mosque':w.q===1?ERR[w.err].id:'mom';return w.items.find(i=>i.id===id)||null}
 function makeWalkGoalMarker(){const g=new T.Group(),gold=disableTownTerrainWarp(new T.MeshBasicMaterial({color:0xffd166,transparent:true,opacity:.96,depthWrite:false,toneMapped:false})),beamM=disableTownTerrainWarp(new T.MeshBasicMaterial({color:0xffd166,transparent:true,opacity:.16,depthWrite:false,side:T.DoubleSide,toneMapped:false})),ring=new T.Mesh(new T.TorusGeometry(.78,.075,8,28),gold.clone()),beam=new T.Mesh(new T.CylinderGeometry(.09,.34,2.35,10,1,true),beamM),cap=new T.Mesh(new T.OctahedronGeometry(.22),gold.clone());ring.rotation.x=Math.PI/2;ring.position.y=.08;beam.position.y=1.25;cap.position.y=2.6;g.add(beam,ring,cap);g.userData={ring,beam,cap};return g}
 function updateWalkGoalMarker(w,dt){const m=w&&w.goalMarker,o=activeWalkObjective(w);if(!m)return;if(!o){m.visible=false;return}m.visible=true;m.position.set(o.x,0,o.z);const d=Math.hypot(w.x-o.x,w.z-o.z),p=.88+.14*Math.sin(t*2.8);m.userData.ring.scale.setScalar(p);m.userData.cap.position.y=2.55+.16*Math.sin(t*3.2);m.userData.ring.material.opacity=d<2.8?.22:.96;m.userData.beam.material.opacity=d<5?.035:.16;m.userData.cap.material.opacity=d<2.8?.28:.96}
-function updQuest(){const w=WK;if(!w)return;const e=ERR[w.err],step=w.q===0?'١':w.q===1?'٢':'٣';let ar,head;if(pPending&&!pDone){head='هدف عاجل · الصلاة';ar='توجّه إلى المسجد في الساحة وأدِّ الصلاة في وقتها.'}else{head='المهمة الأساسية · الخطوة '+step+' من ٣';if(w.q===0)ar='تكلّم مع أمك عند باب المنزل لتعرف ما تحتاجه الأسرة.';else if(w.q===1)ar='اذهب إلى '+e.ar+' واشترِ '+e.itemAr+' ثم عُد إلى المنزل.';else ar='عُد إلى المنزل وسلّم '+e.itemAr+' إلى أمك.'}setH($m,'<b>'+head+'</b><span class="mission-copy">'+ar+'</span>')}
+function updQuest(){const w=WK;if(!w)return;const e=ERR[w.err];let head,ar;if(pPending&&!pDone){head='مهمة عاجلة · الصلاة';ar='اذهب إلى المسجد في الساحة وأدِّ الصلاة، ثم أكمل مشوار الأسرة من حيث توقفت.'}else if(w.q===0){head='المشوار الرئيسي · ١ من ٣';ar='البداية من المنزل: تحدّث مع أمك وخذ طلب الأسرة ومصروف الشراء.'}else if(w.q===1){head='المشوار الرئيسي · ٢ من ٣';ar='الوجهة التالية: '+e.ar+'. اشترِ '+e.itemAr+' بالمبلغ الذي أعطتك أمك.'}else{head='المشوار الرئيسي · ٣ من ٣';ar='العودة إلى المنزل: سلّم '+e.itemAr+' لأمك لتحصل على مكافأة المشوار.'}setH($m,'<b>'+head+'</b><span class="mission-copy">'+ar+'</span>')}
 function talkMom(){const w=WK,e=ERR[w.err];
  if(w.q===0)showDlg('أمك: «يا بني، اذهب إلى '+e.ar+' واشترِ لنا '+e.itemAr+'. خذ هذه النقود.»','',[{t:'حاضر يا أمي',fn:()=>{pay(e.cost+20,'استلمتَ مصروف المشوار. اتبع العلامة الذهبية إلى '+e.ar+'.');w.q=1;updQuest()}}]);
  else if(w.q===1)showDlg('أمك: «'+e.ar+' ينتظرك يا بني»','',[{t:'حسنًا، سأذهب إليه',fn:()=>{}},{t:'أحتاج إلى بقية المال',fn:()=>{if(money<e.cost){const extra=e.cost-money+5;pay(extra,'أعطتك أمك '+extra+' لتكمل شراء '+e.itemAr+'.')}else say('معك ما يكفي لشراء المطلوب.')}}]);
@@ -785,20 +844,19 @@ function talkShop(i){const w=WK,e=ERR[i];
 let walkShadowCellX=NaN,walkShadowCellZ=NaN;
 function syncWalkShadowAnchor(x,z,force=false){const gx=Math.floor(x/24),gz=Math.floor((z-WZ)/24);if(!force&&gx===walkShadowCellX&&gz===walkShadowCellZ)return;walkShadowCellX=gx;walkShadowCellZ=gz;const tx=gx*24,tz=WZ+gz*24;sunL.position.set(tx-34,36,tz-48);sunL.target.position.set(tx,0,tz);sunL.target.updateMatrixWorld();R.shadowMap.needsUpdate=true}
 function configureWalkVisuals(x,z){gnd.visible=false;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.08;R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;S.fog.near=38;S.fog.far=300;sunL.castShadow=true;gnd.receiveShadow=true;sunL.shadow.mapSize.set((navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512,(navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512);sunL.shadow.camera.left=-38;sunL.shadow.camera.right=38;sunL.shadow.camera.top=34;sunL.shadow.camera.bottom=-16;sunL.shadow.camera.near=.5;sunL.shadow.camera.far=240;sunL.shadow.camera.updateProjectionMatrix();syncWalkShadowAnchor(x,z,true)}
-function startWalkMode(){started=true;walkMode=true;document.body.classList.add('walk-mode');configureWalkVisuals(-72,Zl(-44));$('bk').style.display='block';$('goals').style.display='block';$('ov').style.display='none';initAudio();mg.gain.value=0;AC.resume();
+function startWalkMode(){started=true;walkMode=true;document.body.classList.add('walk-mode');configureWalkVisuals(-67,Zl(-45));$('bk').style.display='block';$('goals').style.display='block';$('ov').style.display='none';initAudio();mg.gain.value=0;AC.resume();
  chunks.forEach(g=>{S.remove(g);g.userData.d.forEach(d=>d.dispose())});chunks.clear();mosqueList.length=0;tlights.length=0;rider.visible=false;if(mBeam)mBeam.visible=false;$('spd').style.display='none';
- const W=buildAlley();WK={world:W,rects:W.rects,x:-72,z:Zl(-44),yaw:0,spd:0,ph:0,pp:{lf:0,rf:0,al:0,ar:0,lean:0,twist:0,roll:0},q:0,err:0,item:false,fol:null,pray:null,pe:false,items:[],npcs:[],ev:{},cam:new T.Vector3(),dlg:null,mapT:0};
- const PG=new T.Group(),w=WK,rb=T.SkeletonUtils.clone(REAL.boy.scene);tuneWalkModel(rb);rb.scale.setScalar(1.5);w.boy=new T.Group();w.boy.add(rb);rb.traverse(o=>{if(o.isMesh)o.frustumCulled=false});
- {const mx=new T.AnimationMixer(rb),cl=REAL.boy.animations.find(a=>a.name==='idle');if(cl){const a=mx.clipAction(cl);a.play();a.paused=true;mx.update(.016)}}
+ const W=buildAlley();WK={world:W,rects:W.rects,x:-67,z:Zl(-45),yaw:0,spd:0,ph:0,pp:{lf:0,rf:0,al:0,ar:0,lean:0,twist:0,roll:0},q:0,err:0,item:false,fol:null,pray:null,pe:false,items:[],npcs:[],ev:{},cam:new T.Vector3(),dlg:null,mapT:0};
+ const PG=new T.Group(),w=WK,rb=makeFriendlyHuman('boy');rb.scale.setScalar(.92);w.boy=new T.Group();w.boy.add(rb);
  w.bones=rigBones(rb);w.root=rb.getObjectByName('root');w.rootY=w.root.position.y;const sh=npcGroundShadow(1.08);sh.scale.set(1.08,1.55,1);sh.position.y=.038-WALK_Y;w.boy.add(sh);S.add(w.boy);
  const rnd=mkRng(99),kinds=['owner','medic','elder','kid','boy'];
  const mk=(kind,x,zl,ry,mode)=>{const n=mkNPC(kind,true);if(!n)return null;n.position.set(x,WALK_Y,Zl(zl));n.rotation.y=ry||0;n.userData.mode=mode||'stand';w.npcs.push(n);return n};
  const it=(id,x,zl,label,fn,extra)=>{const o=Object.assign({id,x,z:Zl(zl),r:2.4,label,fn},extra||{});w.items.push(o);return o};
- for(let n=0;n<17;n++){const k=kinds[(rnd()*5)|0],npc=mkNPC(k,true);if(!npc)continue;const u=npc.userData;u.mode='walk';u.sp=1.0+rnd()*.8;u.off=(rnd()<.5?-1:1)*(4.2+rnd()*1.2);u.node=[(rnd()*5)|0,(rnd()*5)|0];u.prev=null;npc.position.set(LN[u.node[0]]+u.off,WALK_Y,NZ[u.node[1]]+u.off);nextNode(u);w.npcs.push(npc)}
+ for(let n=0;n<17;n++){const k=kinds[(rnd()*5)|0],npc=mkNPC(k,true);if(!npc)continue;const u=npc.userData;u.mode='walk';u.sp=1.0+rnd()*.8;u.off=(rnd()<.5?-1:1)*5;u.rng=mkRng(1009+n*131);u.node=[(rnd()*5)|0,(rnd()*5)|0];u.prev=null;npc.position.set(LN[u.node[0]]+u.off,WALK_Y,NZ[u.node[1]]+u.off);nextNode(u);w.npcs.push(npc)}
  W.stalls.slice(0,6).forEach(s=>{const n=mkNPC(rnd()<.5?'elder':'owner',true);if(!n)return;n.position.set(s.vx,WALK_Y,s.vz);n.rotation.y=Math.atan2(s.nx,s.nz);w.npcs.push(n)});
  [[31.2,-12,1],[-40.8,20,1],[-67.6,20,1],[-52,-31.2,0],[20,4.8,0]].forEach((q,i)=>{const a=mkNPC(kinds[(i+1)%5],true),b=mkNPC(kinds[(i+3)%5],true);if(!a||!b)return;const ax=q[2]===0;a.position.set(q[0]-(ax?.55:0),WALK_Y,Zl(q[1])-(ax?0:.55));b.position.set(q[0]+(ax?.55:0),WALK_Y,Zl(q[1])+(ax?0:.55));a.rotation.y=ax?Math.PI/2:0;b.rotation.y=ax?-Math.PI/2:Math.PI;a.userData.mode=b.userData.mode='talk';w.npcs.push(a,b)});
  for(let i=0;i<4;i++){const n=mkNPC('kid',true);if(!n)continue;const u=n.userData;u.mode='run';u.a=i*1.6;u.r=4.2+i*1.1;u.w=(i%2?1:-1)*(.55+i*.08);w.npcs.push(n)}
- [[W.sx-5,W.sz,-Math.PI/2],[W.sx+5,W.sz,Math.PI/2]].forEach(q=>{const n=mkNPC('elder',false,'sit');if(!n)return;n.position.set(q[0],.2,q[1]);n.rotation.y=q[2]+Math.PI;n.userData.mode='sit';w.npcs.push(n)});
+ [[W.sx-5,W.sz,-Math.PI/2],[W.sx+5,W.sz,Math.PI/2]].forEach(q=>{const n=mkNPC('elder',false,'sit');if(!n)return;n.position.set(q[0],WALK_Y,q[1]);n.rotation.y=q[2]+Math.PI;n.userData.mode='sit';w.npcs.push(n)});
  const hd=doorProp();hd.position.set(-65.9,0,Zl(-52));hd.rotation.y=Math.PI/2;PG.add(hd);const mom=mk('owner',-67.6,-50,-Math.PI/2);it('mom',-67.6,-50,'Talk to Mom',talkMom,{npc:mom});
  ERR.forEach((e,i)=>{const st=stallProp(e.col,[0xc99a5b,0xd8b073,0x6bbf59,0xd94b3d]);st.position.set(e.sx,0,Zl(e.zl));st.rotation.y=e.rot;PG.add(st);w.rects.push({x0:e.sx-.6,x1:e.sx+.6,z0:Zl(e.zl)-1.25,z1:Zl(e.zl)+1.25});const v=mk(e.kind,e.vx,e.zl,-e.rot);it(e.id,e.ix,e.zl,'Talk to the '+e.ar,()=>talkShop(i),{npc:v})});
  const ow=mk('owner',-31.2,-10,-Math.PI/2),dd=doorProp();dd.position.set(-30.1,0,Zl(-58));dd.rotation.y=Math.PI/2;PG.add(dd);[[-.6,.6],[-.4,-.3]].forEach((o,k)=>{const b=new T.Mesh(new T.BoxGeometry(.4,.5,.3),bagM[k]);b.position.set(-31.2+o[0],.25,Zl(-10)+o[1]);PG.add(b)});
@@ -811,7 +869,7 @@ function startWalkMode(){started=true;walkMode=true;document.body.classList.add(
  it('mosque',W.door.x,W.door.z-WZ,()=>(pPending&&!pDone)?'ادخل المسجد للصلاة':'زر المسجد',()=>{if(pPending&&!pDone)startPrayerWalk();else say('المسجد هادئ الآن. عُد عند دخول وقت الصلاة.')},{r:3});
  flattenTownObject(PG);PG.userData.d=[];merge(PG);S.add(PG);w.walkers=w.npcs.filter(n=>n.userData.mode==='walk');w.goalMarker=makeWalkGoalMarker();S.add(w.goalMarker);
  w.cam.set(w.x,2.3,w.z-4.4);updQuest();$('keys').textContent='W للحركة · A/D للتوجيه · زر Shift للجري · E للتحدث والتفاعل · M للصوت — للهاتف: اضغط للحركة واسحب للتوجيه';$('keys').style.opacity=1;setTimeout(()=>$('keys').style.opacity=0,16000);
- say('ابدأ بالتحدث مع أمك عند باب المنزل. العلامة الذهبية هي هدفك الحالي؛ والأنشطة الأخرى اختيارية.')}
+ say('ابدأ بمهمة واحدة واضحة: تحدّث مع أمك، اشترِ المطلوب من المتجر المحدد، ثم عد إلى المنزل. العلامة الذهبية هي وجهتك الحالية.')}
 function hitNpc(x,z){for(const n of WK.npcs){const u=n.userData;if(u.mode==='sit'||u.mode==='run'||u.mode==='follow')continue;const dx=x-n.position.x,dz=z-n.position.z;if(dx*dx+dz*dz<.55)return true}return false}
 function helpSum(){return(SV.helped||0)+(SV.trusts||0)+(SV.peace||0)+(SV.mercy||0)+(SV.elders||0)+(SV.schoolRuns||0)}
 function skipToPrayer(){const h=hourNow();let t=null;for(const p of PRY){if(p.h>h){t=p.h;break}}let g=Math.floor(gmin/1440)*1440;if(t===null){g+=1440;t=PRY[0].h}gmin=g+t*60-2}
