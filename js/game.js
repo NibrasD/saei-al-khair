@@ -675,6 +675,27 @@ function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(
   for(const side of[-1,1]){const edge=new T.Mesh(new T.BoxGeometry(151,.025,.08),laneWhite);edge.position.set(0,.055,NZ[a]+side*4.55);g.add(edge)}
   for(let x=-72;x<72;x+=10){const dash=new T.Mesh(new T.BoxGeometry(3.7,.028,.095),laneGold);dash.position.set(x+1.4,.058,NZ[a]);g.add(dash)}
  }
+ // Green-blue bands and dashed boundaries designate bicycle-only lanes.
+ const bikeLaneMat=new T.MeshBasicMaterial({color:0x3e625b,transparent:true,opacity:.88,depthWrite:false});
+ const bikeLaneEdge=new T.MeshBasicMaterial({color:0xa9c8ac,transparent:true,opacity:.9,depthWrite:false});
+ for(let a=0;a<5;a++)for(const side of[-1,1]){
+  const ns=new T.Mesh(new T.PlaneGeometry(1.55,151).rotateX(-Math.PI/2),bikeLaneMat);
+  ns.position.set(LN[a]+side*3.32,.047,WZ);g.add(ns);
+  const ew=new T.Mesh(new T.PlaneGeometry(151,1.55).rotateX(-Math.PI/2),bikeLaneMat);
+  ew.position.set(0,.047,NZ[a]+side*3.32);g.add(ew);
+  const edge1=new T.Mesh(new T.BoxGeometry(.035,.018,151),bikeLaneEdge);
+  edge1.position.set(LN[a]+side*2.42,.056,WZ);g.add(edge1);
+  const edge2=new T.Mesh(new T.BoxGeometry(151,.018,.035),bikeLaneEdge);
+  edge2.position.set(0,.056,NZ[a]+side*2.42);g.add(edge2);
+  for(let z=WZ-70;z<WZ+72;z+=13){
+   const mark=new T.Mesh(new T.BoxGeometry(.06,.018,2.3),laneWhite);
+   mark.position.set(LN[a]+side*4.15,.057,z);g.add(mark)
+  }
+  for(let x=-70;x<72;x+=13){
+   const mark=new T.Mesh(new T.BoxGeometry(2.3,.018,.06),laneWhite);
+   mark.position.set(x,.057,NZ[a]+side*4.15);g.add(mark)
+  }
+ }
  for(let a=1;a<4;a++)for(let b=1;b<4;b++)for(const side of[-1,1])for(let k=-2;k<=2;k++){
   const v=new T.Mesh(new T.BoxGeometry(6.9,.035,.34),zebM);v.position.set(LN[a],.063,NZ[b]+side*(5.1+k*.5));g.add(v);
   const h=new T.Mesh(new T.BoxGeometry(.34,.035,6.9),zebM);h.position.set(LN[a]+side*(5.1+k*.5),.064,NZ[b]);g.add(h)
@@ -705,9 +726,16 @@ function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(
   const head=new T.Mesh(new T.SphereGeometry(.145,12,9),bikeSkinM);head.position.set(0,1.57,.015);o.add(head);
   const helmet=new T.Mesh(new T.SphereGeometry(.16,12,8,0,Math.PI*2,0,Math.PI*.56),frame);helmet.position.set(0,1.62,.005);o.add(helmet);
   [-1,1].forEach(side=>{rod(o,[side*.12,1.30,.015],[side*.19,.94,.55],.035,shirt);rod(o,[side*.075,1.05,-.04],[side*.11,.60,-.29],.045,shirt);rod(o,[side*.11,.60,-.29],[side*.10,.43,-.10],.032,tireM)});
-  o.position.set(x,WALK_Y,z);
-  const dir=limits.dir||1;o.rotation.y=limits.axis==='z'?(dir>0?0:Math.PI):(dir>0?Math.PI/2:-Math.PI/2);
-  o.userData.traffic={axis:limits.axis,dir,lo:limits.lo,hi:limits.hi,speed:limits.speed,wheels,crank,phase:Math.random()*6.28};
+  const x0=LN[limits.a],x1=LN[limits.a+1],z0=NZ[limits.b],z1=NZ[limits.b+1],lane=3.32,round=1.65;
+  const pathPts=[
+   [x0+lane,z0+lane+round],[x0+lane,z1-lane-round],
+   [x0+lane+round,z1-lane],[x1-lane-round,z1-lane],
+   [x1-lane,z1-lane-round],[x1-lane,z0+lane+round],
+   [x1-lane-round,z0+lane],[x0+lane+round,z0+lane]
+  ].map(p=>new T.Vector3(p[0],WALK_Y,p[1]));
+  const route=new T.CatmullRomCurve3(pathPts,true,'centripetal',.18),length=route.getLength(),u0=limits.progress||0,pt=route.getPointAt(u0),tan=route.getTangentAt(u0);
+  o.position.copy(pt);o.rotation.y=Math.atan2(tan.x,tan.z);
+  o.userData.traffic={route,length,progress:u0,speed:limits.speed,wheels,crank,phase:Math.random()*6.28};
   flattenTownObject(o);S.add(o);trafficBikes.push(o);
  };
  const facadeTrim=L(0xe7d8bc),facadeBase=L(0x806a59);const mkB=(cx,cz,bw,bd)=>{const hh=8+rnd()*7,face=fm[(rnd()*fm.length)|0],m=new T.Mesh(new T.BoxGeometry(bw,hh,bd),face);m.position.set(cx,hh/2,cz);g.add(m);
@@ -735,7 +763,10 @@ function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(
    for(let n=0;n<2;n++){const xx=x0+5+rnd()*14,ln=new T.Mesh(new T.BoxGeometry(.03,.03,4),L(0x444444));ln.position.set(xx,6.2,zm);g.add(ln);for(let k=0;k<3;k++){const cl=new T.Mesh(new T.PlaneGeometry(.55,.75),L([0xe74c3c,0x3498db,0xf1c40f,0x2ecc71][(rnd()*4)|0],{side:T.DoubleSide}));cl.position.set(xx,5.8,zm-1.2+k*1.2);cl.rotation.y=Math.PI/2;g.add(cl)}}}}
  for(let k=0;k<20;k++){const al=-76+7.8*(k+.5);[[82.5,al,9,7.8],[-82.5,al,9,7.8],[al,-82.5,7.8,9],[al,82.5,7.8,9]].forEach(q=>{const hh=8+rnd()*8,m=new T.Mesh(new T.BoxGeometry(q[2],hh,q[3]),fm[(rnd()*fm.length)|0]);m.position.set(q[0],hh/2,q[1]+WZ);g.add(m)})}
  [[0,-77,156,2],[0,77,156,2],[-77,0,2,156],[77,0,2,156]].forEach(q=>{const s=new T.Mesh(new T.BoxGeometry(q[2],.12,q[3]),SWM);s.position.set(q[0],.06,q[1]+WZ);g.add(s)});
- for(let n=0;n<16;n++){const a=(rnd()*5)|0,b=(rnd()*4)|0,vert=rnd()<.5,along=(vert?NZ[b]:LN[b])+8+rnd()*20,sd=rnd()<.5?-1:1,dir=rnd()<.5?-1:1,speed=1.25+rnd()*.8;if(vert)car(LN[a]+sd*3.25,along,true,bikeCols[(rnd()*bikeCols.length)|0],{axis:'z',lo:NZ[b]+7.5,hi:NZ[b+1]-7.5,dir,speed});else car(along,NZ[a]+sd*3.25,false,bikeCols[(rnd()*bikeCols.length)|0],{axis:'x',lo:LN[b]+7.5,hi:LN[b+1]-7.5,dir,speed})}
+ for(let n=0;n<16;n++){
+  const a=n%4,b=Math.floor(n/4),speed=2.0+rnd()*.65,progress=rnd();
+  car(0,0,true,bikeCols[(rnd()*bikeCols.length)|0],{a,b,speed,progress})
+ }
  for(let a=1;a<4;a++)for(let b=1;b<4;b++)[[0,1],[1,0]].forEach(d=>[-1,1].forEach(sg=>{for(let k=-3;k<=3;k++){const s=new T.Mesh(new T.BoxGeometry(d[0]?.5:2.2,.02,d[0]?2.2:.5),zebM);s.position.set(LN[a]+d[0]*sg*0+(d[1]?k*1.05:sg*(d[0]*0)),.055,NZ[b]);}}));
  const lanM=new T.MeshBasicMaterial({color:0xffd07a}),lant=[];
  const sx=-18,sz=18,zc=NZ[3]-6-5.2,sf=12+WZ;
@@ -778,10 +809,11 @@ function makeHeldErrandProps(w){
  Object.values(w.heldProps).forEach(m=>{m.visible=false;group.add(m)});w.heldGroup=group;
 }
 function syncHeldErrandItem(w){if(!w||!w.heldProps)return;Object.values(w.heldProps).forEach(m=>{m.visible=false});if(w.item){const id=ERR[w.err].id;if(w.heldProps[id])w.heldProps[id].visible=true}}
-function updateTrafficBikes(bikes,dt){if(!bikes)return;for(const o of bikes){const u=o.userData.traffic;if(!u)continue;u.phase+=dt*u.speed*5;
- const axis=u.axis==='z'?'z':'x';o.position[axis]+=u.dir*u.speed*dt;
- if(u.dir>0&&o.position[axis]>u.hi)o.position[axis]=u.lo;else if(u.dir<0&&o.position[axis]<u.lo)o.position[axis]=u.hi;
- u.wheels.forEach(w=>{w.rotation.x+=u.dir*dt*u.speed/.34});u.crank.rotation.x=Math.sin(u.phase)*.38;
+function updateTrafficBikes(bikes,dt){if(!bikes)return;for(const o of bikes){const u=o.userData.traffic;if(!u)continue;
+ u.phase+=dt*u.speed*5;u.progress=(u.progress+u.speed*dt/u.length)%1;
+ const pt=u.route.getPointAt(u.progress),tan=u.route.getTangentAt(u.progress);
+ o.position.copy(pt);o.rotation.y=Math.atan2(tan.x,tan.z);
+ u.wheels.forEach(w=>{w.rotation.x+=dt*u.speed/.34});u.crank.rotation.x=Math.sin(u.phase)*.38;
 }}
 const FRIENDLY_SPHERE=new T.SphereGeometry(1,16,12),FRIENDLY_MATS=Object.create(null);
 function friendlyMat(hex){const key=String(hex);if(!FRIENDLY_MATS[key])FRIENDLY_MATS[key]=disableTownTerrainWarp(new T.MeshLambertMaterial({color:hex}));return FRIENDLY_MATS[key]}
@@ -916,9 +948,9 @@ function talkShop(i){const w=WK,e=ERR[i],shopItem=w.items.find(it=>it.id===e.id)
 let walkShadowCellX=NaN,walkShadowCellZ=NaN;
 function syncWalkShadowAnchor(x,z,force=false){const gx=Math.floor(x/24),gz=Math.floor((z-WZ)/24);if(!force&&gx===walkShadowCellX&&gz===walkShadowCellZ)return;walkShadowCellX=gx;walkShadowCellZ=gz;const tx=gx*24,tz=WZ+gz*24;sunL.position.set(tx-34,36,tz-48);sunL.target.position.set(tx,0,tz);sunL.target.updateMatrixWorld();R.shadowMap.needsUpdate=true}
 function configureWalkVisuals(x,z){gnd.visible=false;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.08;R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;S.fog.near=38;S.fog.far=300;sunL.castShadow=true;gnd.receiveShadow=true;sunL.shadow.mapSize.set((navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512,(navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512);sunL.shadow.camera.left=-38;sunL.shadow.camera.right=38;sunL.shadow.camera.top=34;sunL.shadow.camera.bottom=-16;sunL.shadow.camera.near=.5;sunL.shadow.camera.far=240;sunL.shadow.camera.updateProjectionMatrix();syncWalkShadowAnchor(x,z,true)}
-function startWalkMode(){started=true;walkMode=true;document.body.classList.add('walk-mode');configureWalkVisuals(-66,Zl(-45));$('bk').style.display='block';$('goals').style.display='block';$('ov').style.display='none';initAudio();mg.gain.value=0;AC.resume();
+function startWalkMode(){started=true;walkMode=true;document.body.classList.add('walk-mode');configureWalkVisuals(-72,Zl(-50));$('bk').style.display='block';$('goals').style.display='block';$('ov').style.display='none';initAudio();mg.gain.value=0;AC.resume();
  chunks.forEach(g=>{S.remove(g);g.userData.d.forEach(d=>d.dispose())});chunks.clear();mosqueList.length=0;tlights.length=0;rider.visible=false;if(mBeam)mBeam.visible=false;$('spd').style.display='none';
- const W=buildAlley();WK={world:W,rects:W.rects,x:-66,z:Zl(-45),yaw:0,spd:0,ph:0,pp:{lf:0,rf:0,al:0,ar:0,lean:0,twist:0,roll:0},q:0,err:0,item:false,heldProps:null,jumpY:0,jumpV:0,onGround:true,fol:null,pray:null,pe:false,items:[],npcs:[],ev:{},cam:new T.Vector3(),dlg:null,mapT:0};
+ const W=buildAlley();WK={world:W,rects:W.rects,x:-72,z:Zl(-50),yaw:0,spd:0,ph:0,pp:{lf:0,rf:0,al:0,ar:0,lean:0,twist:0,roll:0},q:0,err:0,item:false,heldProps:null,jumpY:0,jumpV:0,onGround:true,fol:null,pray:null,pe:false,items:[],npcs:[],ev:{},cam:new T.Vector3(),dlg:null,mapT:0};
  const PG=new T.Group(),w=WK,rb=makeFriendlyHuman('boy');rb.scale.setScalar(.92);w.boy=new T.Group();w.boy.add(rb);
  w.bones=rigBones(rb);w.root=rb.getObjectByName('root');w.rootY=w.root.position.y;makeHeldErrandProps(w);const sh=npcGroundShadow(1.08);sh.scale.set(1.08,1.55,1);sh.position.y=.038-WALK_Y;w.boy.add(sh);S.add(w.boy);
  const rnd=mkRng(99),kinds=['owner','medic','elder','kid','boy'];
