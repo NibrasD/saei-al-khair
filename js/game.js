@@ -705,11 +705,40 @@ function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(
   const o=new T.Group(),frame=L(col),rubber=tireM,steel=bikeSteelM,shirt=L(col);
   const rod=(parent,a,b,r,mat)=>{const p=new T.Vector3(a[0],a[1],a[2]),q=new T.Vector3(b[0],b[1],b[2]),d=q.clone().sub(p),m=new T.Mesh(new T.CylinderGeometry(r,r,d.length(),6),mat);m.position.copy(p).add(q).multiplyScalar(.5);m.quaternion.setFromUnitVectors(new T.Vector3(0,1,0),d.normalize());parent.add(m);return m};
   const wheels=[];
+  const mergeBikeLocal=(root,keep=[])=>{
+   root.updateMatrixWorld(true);
+   const inv=root.matrixWorld.clone().invert(),protectedGroups=new Set(keep),byMaterial=new Map(),remove=[];
+   const protectedMesh=q=>{for(let p=q.parent;p&&p!==root;p=p.parent)if(protectedGroups.has(p))return true;return false};
+   root.traverse(q=>{
+    if(!q.isMesh||q.userData.keep||protectedMesh(q))return;
+    const ge=(q.geometry.index?q.geometry.toNonIndexed():q.geometry.clone());
+    ge.applyMatrix4(inv.clone().multiply(q.matrixWorld));
+    if(!byMaterial.has(q.material))byMaterial.set(q.material,[]);
+    byMaterial.get(q.material).push(ge);remove.push(q)
+   });
+   remove.forEach(q=>q.parent&&q.parent.remove(q));
+   byMaterial.forEach((geos,material)=>{
+    let count=0;geos.forEach(ge=>count+=ge.attributes.position.count);
+    const positions=new Float32Array(count*3),normals=new Float32Array(count*3),uvs=new Float32Array(count*2);let offset=0;
+    geos.forEach(ge=>{
+     const n=ge.attributes.position.count;
+     positions.set(ge.attributes.position.array,offset*3);
+     if(ge.attributes.normal)normals.set(ge.attributes.normal.array,offset*3);
+     if(ge.attributes.uv)uvs.set(ge.attributes.uv.array,offset*2);
+     offset+=n;ge.dispose()
+    });
+    const merged=new T.BufferGeometry();
+    merged.setAttribute('position',new T.BufferAttribute(positions,3));
+    merged.setAttribute('normal',new T.BufferAttribute(normals,3));
+    merged.setAttribute('uv',new T.BufferAttribute(uvs,2));
+    const mesh=new T.Mesh(merged,material);mesh.frustumCulled=false;root.add(mesh)
+   })
+  };
   const wheel=(zz)=>{const spin=new T.Group();spin.position.set(0,.39,zz);
    const tire=new T.Mesh(new T.TorusGeometry(.34,.026,6,20),rubber);tire.rotation.y=Math.PI/2;spin.add(tire);
    const rim=new T.Mesh(new T.TorusGeometry(.292,.012,5,20),steel);rim.rotation.y=Math.PI/2;spin.add(rim);
    for(let k=0;k<4;k++){const a=k*Math.PI/2,spoke=new T.Mesh(new T.CylinderGeometry(.006,.006,.56,4),steel);spoke.position.set(0,Math.cos(a)*.14,Math.sin(a)*.14);spoke.rotation.x=a;spoke.rotation.y=Math.PI/2;spin.add(spoke)}
-   o.add(spin);wheels.push(spin);return spin};
+   o.add(spin);mergeBikeLocal(spin);wheels.push(spin);return spin};
   wheel(-.72);wheel(.72);
   rod(o,[0,.39,-.72],[0,.42,-.12],.025,frame);
   rod(o,[0,.42,-.12],[0,.81,-.25],.025,frame);
@@ -734,9 +763,10 @@ function buildAlley(){const g=new T.Group(),rects=[],rnd=mkRng(4242),fm=facMats(
    [x1-lane-round,z0+lane],[x0+lane+round,z0+lane]
   ].map(p=>new T.Vector3(p[0],0,p[1]));
   const route=new T.CatmullRomCurve3(pathPts,true,'centripetal',.18),length=route.getLength(),u0=limits.progress||0,pt=route.getPointAt(u0),tan=route.getTangentAt(u0);
-  o.position.copy(pt);o.rotation.y=Math.atan2(tan.x,tan.z);
+  mergeBikeLocal(crank);mergeBikeLocal(o,[...wheels,crank]);
+  o.position.copy(pt);o.rotation.y=Math.atan2(tan.x,tan.z);o.frustumCulled=false;
   o.userData.traffic={route,length,progress:u0,speed:limits.speed,wheels,crank,phase:Math.random()*6.28};
-  flattenTownObject(o);S.add(o);trafficBikes.push(o);
+  flattenTownObject(o);o.traverse(q=>{if(q.isMesh){q.frustumCulled=false;q.castShadow=false;q.receiveShadow=false}});S.add(o);trafficBikes.push(o);
  };
  const facadeTrim=L(0xe7d8bc),facadeBase=L(0x806a59);const mkB=(cx,cz,bw,bd)=>{const hh=8+rnd()*7,face=fm[(rnd()*fm.length)|0],m=new T.Mesh(new T.BoxGeometry(bw,hh,bd),face);m.position.set(cx,hh/2,cz);g.add(m);
   const plinth=new T.Mesh(new T.BoxGeometry(bw+.12,.34,bd+.12),facadeBase);plinth.position.set(cx,.17,cz);g.add(plinth);
@@ -894,6 +924,21 @@ function mkNPC(kind,tint,pose){
  g.userData={m,bones:rigBones(m),ph,kind,sc,waveBone:m.getObjectByName('arm-right'),waveAmt:0,waveTarget:0,waveT:0,mode:'stand'};S.add(g);return g
 }
 function blocked(x,z,r){r=r||.35;if(Math.abs(x)>77||z<WZ-77||z>WZ+77)return true;const R=WK.rects;for(let i=0;i<R.length;i++){const q=R[i];if(x>q.x0-r&&x<q.x1+r&&z>q.z0-r&&z<q.z1+r)return true}return false}
+ function walkCollisionDepth(x,z,r=.35){
+  let d=Math.max(0,-77-x)+Math.max(0,x-77)+Math.max(0,WZ-77-z)+Math.max(0,z-(WZ+77));
+  for(const q of WK.rects){const x0=q.x0-r,x1=q.x1+r,z0=q.z0-r,z1=q.z1+r;if(x>x0&&x<x1&&z>z0&&z<z1)d+=Math.min(x-x0,x1-x,z-z0,z1-z)+.001}
+  return d
+ }
+ function npcCollisionDepth(x,z){
+  let d=0;const limit=Math.sqrt(.55);
+  for(const n of WK.npcs){const u=n.userData;if(u.mode==='sit'||u.mode==='run'||u.mode==='follow')continue;const dx=x-n.position.x,dz=z-n.position.z,dist=Math.hypot(dx,dz);if(dist<limit)d+=limit-dist}
+  return d
+ }
+ function walkStepAllowed(x,z,nx,nz,r=.35){
+  const currentBlocked=blocked(x,z,r)||hitNpc(x,z),nextBlocked=blocked(nx,nz,r)||hitNpc(nx,nz);
+  if(!nextBlocked)return true;
+  return currentBlocked&&walkCollisionDepth(nx,nz,r)+npcCollisionDepth(nx,nz)<walkCollisionDepth(x,z,r)+npcCollisionDepth(x,z)-.0001
+ }
 function nextNode(u){const nb=[],i=u.node[0],j=u.node[1],rand=u.rng||Math.random;[[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{const a=i+d[0],b=j+d[1];if(a>=0&&a<5&&b>=0&&b<5&&!(u.prev&&u.prev[0]===a&&u.prev[1]===b))nb.push([a,b])});const nx=nb.length?nb[(rand()*nb.length)|0]:u.prev;u.prev=u.node;u.node=nx;u.tx=LN[nx[0]]+u.off;u.tz=NZ[nx[1]]+u.off}
 function npcUpdate(n,dt){const u=n.userData;{const fd=Math.hypot(n.position.x-WK.x,n.position.z-WK.z);const far=fd>58;if(far!==!n.visible){n.visible=!far}if(far&&u.mode!=='walk')return}u.waveAmt+=(u.waveTarget-u.waveAmt)*(1-Math.exp(-7*dt));if(u.waveT>0){u.waveT-=dt;if(u.waveT<=0)u.waveTarget=0}let posed=false;
  if(u.mode==='walk'){const dx=u.tx-n.position.x,dz=u.tz-n.position.z,d=Math.hypot(dx,dz);
@@ -948,9 +993,9 @@ function talkShop(i){const w=WK,e=ERR[i],shopItem=w.items.find(it=>it.id===e.id)
 let walkShadowCellX=NaN,walkShadowCellZ=NaN;
 function syncWalkShadowAnchor(x,z,force=false){const gx=Math.floor(x/24),gz=Math.floor((z-WZ)/24);if(!force&&gx===walkShadowCellX&&gz===walkShadowCellZ)return;walkShadowCellX=gx;walkShadowCellZ=gz;const tx=gx*24,tz=WZ+gz*24;sunL.position.set(tx-34,36,tz-48);sunL.target.position.set(tx,0,tz);sunL.target.updateMatrixWorld();R.shadowMap.needsUpdate=true}
 function configureWalkVisuals(x,z){gnd.visible=false;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.08;R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;S.fog.near=38;S.fog.far=300;sunL.castShadow=true;gnd.receiveShadow=true;sunL.shadow.mapSize.set((navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512,(navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512);sunL.shadow.camera.left=-38;sunL.shadow.camera.right=38;sunL.shadow.camera.top=34;sunL.shadow.camera.bottom=-16;sunL.shadow.camera.near=.5;sunL.shadow.camera.far=240;sunL.shadow.camera.updateProjectionMatrix();syncWalkShadowAnchor(x,z,true)}
-function startWalkMode(){started=true;walkMode=true;document.body.classList.add('walk-mode');configureWalkVisuals(-72,Zl(-50));$('bk').style.display='block';$('goals').style.display='block';$('ov').style.display='none';initAudio();mg.gain.value=0;AC.resume();
+function startWalkMode(){started=true;walkMode=true;document.body.classList.add('walk-mode');configureWalkVisuals(-70.2,Zl(-50));$('bk').style.display='block';$('goals').style.display='block';$('ov').style.display='none';initAudio();mg.gain.value=0;AC.resume();
  chunks.forEach(g=>{S.remove(g);g.userData.d.forEach(d=>d.dispose())});chunks.clear();mosqueList.length=0;tlights.length=0;rider.visible=false;if(mBeam)mBeam.visible=false;$('spd').style.display='none';
- const W=buildAlley();WK={world:W,rects:W.rects,x:-72,z:Zl(-50),yaw:0,spd:0,ph:0,pp:{lf:0,rf:0,al:0,ar:0,lean:0,twist:0,roll:0},q:0,err:0,item:false,heldProps:null,jumpY:0,jumpV:0,onGround:true,fol:null,pray:null,pe:false,items:[],npcs:[],ev:{},cam:new T.Vector3(),dlg:null,mapT:0};
+ const W=buildAlley();WK={world:W,rects:W.rects,x:-70.2,z:Zl(-50),yaw:Math.PI/2,spd:0,ph:0,pp:{lf:0,rf:0,al:0,ar:0,lean:0,twist:0,roll:0},q:0,err:0,item:false,heldProps:null,jumpY:0,jumpV:0,onGround:true,fol:null,pray:null,pe:false,items:[],npcs:[],ev:{},cam:new T.Vector3(),dlg:null,mapT:0};
  const PG=new T.Group(),w=WK,rb=makeFriendlyHuman('boy');rb.scale.setScalar(.92);w.boy=new T.Group();w.boy.add(rb);
  w.bones=rigBones(rb);w.root=rb.getObjectByName('root');w.rootY=w.root.position.y;makeHeldErrandProps(w);const sh=npcGroundShadow(1.08);sh.scale.set(1.08,1.55,1);sh.position.y=.038-WALK_Y;w.boy.add(sh);S.add(w.boy);
  const rnd=mkRng(99),kinds=['owner','medic','elder','kid','boy'];
@@ -972,6 +1017,14 @@ function startWalkMode(){started=true;walkMode=true;document.body.classList.add(
  const a1=mk('elder',31.2,60,0,'argue'),a2=mk('boy',31.2,62.2,Math.PI,'argue');it('argue',32.6,61,'Calm the neighbors',evArgue,{ev:{done:false,npcs:[a1,a2]}});
  it('mosque',W.door.x,W.door.z-WZ,()=>(pPending&&!pDone)?'ادخل المسجد للصلاة':'زر المسجد',()=>{if(pPending&&!pDone)startPrayerWalk();else say('المسجد هادئ الآن. عُد عند دخول وقت الصلاة.')},{r:3});
  flattenTownObject(PG);PG.userData.d=[];merge(PG);S.add(PG);w.walkers=w.npcs.filter(n=>n.userData.mode==='walk');w.goalMarker=makeWalkGoalMarker();S.add(w.goalMarker);
+ // Choose a walkable spawn around home; never start inside an obstacle or another character.
+ const sx=-70.2,sz=Zl(-50);let spawn=null;
+ for(let radius=0;radius<=8&&!spawn;radius+=.5){
+  const count=radius===0?1:Math.max(8,Math.ceil(2*Math.PI*radius/.5));
+  for(let k=0;k<count;k++){const a=radius===0?0:k/count*Math.PI*2,px=sx+Math.cos(a)*radius,pz=sz+Math.sin(a)*radius;if(!blocked(px,pz,.42)&&!hitNpc(px,pz)){spawn={x:px,z:pz};break}}
+ }
+ if(spawn){w.x=spawn.x;w.z=spawn.z}
+ w.yaw=Math.atan2(-67.6-w.x,Zl(-50)-w.z);w.boy.position.set(w.x,WALK_Y,w.z);w.boy.rotation.y=w.yaw;
  w.cam.set(w.x,2.3,w.z-4.4);updQuest();$('keys').textContent='W للإسراع · ↑ للمشي · Shift للجري · Space للقفز · A/D للتوجيه · E للتفاعل · M للصوت';$('keys').style.opacity=1;setTimeout(()=>$('keys').style.opacity=0,16000);
  say('ابدأ بمهمة واحدة واضحة: تحدّث مع أمك، اشترِ المطلوب من المتجر المحدد، ثم عد إلى المنزل. العلامة الذهبية هي وجهتك الحالية.')}
 function hitNpc(x,z){for(const n of WK.npcs){const u=n.userData;if(u.mode==='sit'||u.mode==='run'||u.mode==='follow')continue;const dx=x-n.position.x,dz=z-n.position.z;if(dx*dx+dz*dz<.55)return true}return false}
@@ -1034,7 +1087,7 @@ function walkLoop(dt){const w=WK;w.fc=(w.fc||0)+1;
  setH($('hud'),'الرصيد: '+money+' جنيهًا<br><small style="opacity:.9;font-size:12px">'+(w.item?'معك: '+ERR[w.err].itemAr:'تجوّل وساعد الآخرين')+'</small>');
  const lock=!!(menuOpen||w.pray),fw=(K.KeyW||K.ArrowUp||ptr)?1:0,bw=(K.KeyS||K.ArrowDown)?1:0,tr=ptr?clamp((ptr.x/innerWidth-.5)*2.4,-1,1):((K.KeyD||K.ArrowRight)?1:0)-((K.KeyA||K.ArrowLeft)?1:0),run=K.KeyW||K.ShiftLeft||K.ShiftRight;
  const tgt=lock?0:(fw?(run?6.5:3.5):bw?-1.7:0);w.spd+=(tgt-w.spd)*Math.min(1,(tgt===0?10:7)*dt);if(!lock)w.yaw+=tr*(fw||bw?2.4:3.0)*dt;
- const fx=Math.sin(w.yaw),fz=Math.cos(w.yaw),nx=w.x+fx*w.spd*dt,nz=w.z+fz*w.spd*dt;if(!blocked(nx,w.z)&&!hitNpc(nx,w.z))w.x=nx;else w.spd*=.6;if(!blocked(w.x,nz)&&!hitNpc(w.x,nz))w.z=nz;else w.spd*=.6;
+ const fx=Math.sin(w.yaw),fz=Math.cos(w.yaw),nx=w.x+fx*w.spd*dt,nz=w.z+fz*w.spd*dt;if(walkStepAllowed(w.x,w.z,nx,w.z,.35))w.x=nx;else w.spd*=.6;if(walkStepAllowed(w.x,w.z,w.x,nz,.35))w.z=nz;else w.spd*=.6;
  const k2=Math.min(1,Math.abs(w.spd)/6.5);let o;
  if(Math.abs(w.spd)>.12){w.ph+=dt*Math.abs(w.spd)*2.6*(w.spd<0?-1:1);o=walkOff(w.ph,.2+.24*k2);o.lean=(o.lean||0)+.1*k2}else o={lean:.012*Math.sin(t*1.7)};
  easePose(w.pp,o,Math.min(1,10*dt));walkBodyPose(w.bones,w.pp);w.root.position.y=w.rootY+(Math.abs(w.spd)>.12?(.012+.012*k2)*Math.abs(Math.sin(w.ph)):0);
