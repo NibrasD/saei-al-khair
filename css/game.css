@@ -142,3 +142,47 @@ body.walk-mode #mis{
   border:1px solid rgba(245,211,130,.78)!important;
 }
 body.walk-mode #mis .mission-copy{color:#fff9ed;font-weight:700}
+
+
+/* Dialogue and event captions stay in the bottom subtitle area, like a polished game HUD. */
+body.walk-mode #toast{
+  top:auto!important;
+  bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;
+  left:50%;
+  width:min(760px,calc(100vw - 32px));
+  max-width:calc(100vw - 32px);
+  box-sizing:border-box;
+  padding:12px 20px;
+  border:1px solid rgba(245,211,130,.58);
+  border-radius:14px;
+  background:rgba(16,23,25,.96);
+  color:#fff8e9;
+  font-size:clamp(16px,1.65vw,21px);
+  line-height:1.75;
+  text-align:center;
+  text-shadow:0 1px 3px rgba(0,0,0,.75);
+  box-shadow:0 8px 28px rgba(0,0,0,.4);
+  z-index:3;
+}
+body.walk-mode #act{
+  bottom:calc(104px + env(safe-area-inset-bottom,0px));
+}
+body.walk-mode #menu .walk-dialog span{
+  white-space:pre-line;
+}
+@media(max-width:700px){
+  body.walk-mode #toast{
+    width:calc(100vw - 20px);
+    max-width:calc(100vw - 20px);
+    bottom:calc(8px + env(safe-area-inset-bottom,0px))!important;
+    padding:9px 11px;
+    border-radius:11px;
+    font-size:14px;
+    line-height:1.65;
+  }
+  body.walk-mode #act{
+    bottom:calc(83px + env(safe-area-inset-bottom,0px));
+    padding:8px 11px;
+    font-size:13px;
+  }
+}
