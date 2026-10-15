@@ -874,7 +874,7 @@ function npcUpdate(n,dt){const u=n.userData;{const fd=Math.hypot(n.position.x-WK
  else if(u.mode==='argue'){walkBodyPose(u.bones,{ar:.9+.5*Math.sin(t*5+u.ph),al:.7+.5*Math.sin(t*4.2+u.ph),lean:.1,twist:.1*Math.sin(t*3+u.ph)});setHumanEmotion(n,'sad');posed=true}
  else if(u.mode==='run'){if(Math.hypot(WK.x-n.position.x,WK.z-n.position.z)<1.7){walkBodyPose(u.bones,{});posed=true}else{u.a+=dt*u.w;const sx=WK.world.sx,sz=WK.world.sz;n.position.set(sx+Math.cos(u.a)*u.r,WALK_Y,sz+Math.sin(u.a)*u.r);n.rotation.y=Math.atan2(-Math.sin(u.a),Math.cos(u.a))*(u.w>0?1:-1);u.ph+=dt*11;walkBodyPose(u.bones,walkOff(u.ph,.5));posed=true}}
  if(u.waveAmt>.01){if(!posed)walkBodyPose(u.bones,{});u.waveBone.quaternion.multiply(qZ(-(1.9+Math.sin(t*8)*.32)*u.waveAmt))}}
-function showDlg(ar,en,ch){menuOpen=true;menuMode='dlg';WK.dlg=ch;$menu.innerHTML='<div class="walk-dialog" dir="rtl"><span>'+ar+'</span>'+ch.map((c,i)=>'<button data-i="'+i+'">'+c.t+'</button>').join('')+'</div>';$menu.style.display='flex'}
+function showDlg(ar,en,ch){menuOpen=true;menuMode='dlg';WK.dlg=ch;$t.style.opacity=0;$menu.innerHTML='<div class="walk-dialog" dir="rtl"><span>'+ar+'</span>'+ch.map((c,i)=>'<button data-i="'+i+'">'+c.t+'</button>').join('')+'</div>';$menu.style.display='flex'}
 function dlgChoice(i){const c=WK&&WK.dlg&&WK.dlg[i];closeMenu();if(c&&c.fn)c.fn()}
 function pay(n,msg){money+=n;SV.money=money;svSave();if(n>0){fan();coin()}if(msg)say(msg)}
 function greet(n){const u=n.userData;u.waveTarget=1;u.waveT=2.4;setHumanEmotion(n,'happy');setHumanEmotion(WK&&WK.boy,'happy');SV.salams=(SV.salams||0)+1;svSave();say('السلام عليكم  ←  '+['وعليكم السلام ورحمة الله وبركاته','وعليكم السلام يا بني','أهلاً بك يا ولدي'][(Math.random()*3)|0]);if(Math.random()<.2){pay(5)}}
