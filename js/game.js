@@ -940,7 +940,7 @@ function startWalkMode(){started=true;walkMode=true;document.body.classList.add(
  const a1=mk('elder',31.2,60,0,'argue'),a2=mk('boy',31.2,62.2,Math.PI,'argue');it('argue',32.6,61,'Calm the neighbors',evArgue,{ev:{done:false,npcs:[a1,a2]}});
  it('mosque',W.door.x,W.door.z-WZ,()=>(pPending&&!pDone)?'ادخل المسجد للصلاة':'زر المسجد',()=>{if(pPending&&!pDone)startPrayerWalk();else say('المسجد هادئ الآن. عُد عند دخول وقت الصلاة.')},{r:3});
  flattenTownObject(PG);PG.userData.d=[];merge(PG);S.add(PG);w.walkers=w.npcs.filter(n=>n.userData.mode==='walk');w.goalMarker=makeWalkGoalMarker();S.add(w.goalMarker);
- w.cam.set(w.x,2.3,w.z-4.4);updQuest();$('keys').textContent='W أو ↑ للمشي · Shift للجري · Space للقفز · A/D للتوجيه · E للتحدث والتفاعل · M للصوت';$('keys').style.opacity=1;setTimeout(()=>$('keys').style.opacity=0,16000);
+ w.cam.set(w.x,2.3,w.z-4.4);updQuest();$('keys').textContent='W للإسراع · ↑ للمشي · Shift للجري · Space للقفز · A/D للتوجيه · E للتفاعل · M للصوت';$('keys').style.opacity=1;setTimeout(()=>$('keys').style.opacity=0,16000);
  say('ابدأ بمهمة واحدة واضحة: تحدّث مع أمك، اشترِ المطلوب من المتجر المحدد، ثم عد إلى المنزل. العلامة الذهبية هي وجهتك الحالية.')}
 function hitNpc(x,z){for(const n of WK.npcs){const u=n.userData;if(u.mode==='sit'||u.mode==='run'||u.mode==='follow')continue;const dx=x-n.position.x,dz=z-n.position.z;if(dx*dx+dz*dz<.55)return true}return false}
 function helpSum(){return(SV.helped||0)+(SV.trusts||0)+(SV.peace||0)+(SV.mercy||0)+(SV.elders||0)+(SV.schoolRuns||0)}
@@ -1000,7 +1000,7 @@ function walkLoop(dt){const w=WK;w.fc=(w.fc||0)+1;
  $('clk').classList.toggle('due',due);setH($('clkT'),fmtT(h));setH($('clkP'),due?('🕌 حان وقت '+PRY[pCur].n+' — المسجد في الساحة'):('الصلاة القادمة: '+nxt.n+' '+fmtT(nxt.h)));
  {const cb=$('clkB');cb.textContent=ramNow()?('🌙 رمضان '+ramDay()+(fastingNow()?' · صائم':'')):(wdNow()===5?'🕌 جمعة مباركة':'');cb.style.display=cb.textContent?'block':'none'}
  setH($('hud'),'الرصيد: '+money+' جنيهًا<br><small style="opacity:.9;font-size:12px">'+(w.item?'معك: '+ERR[w.err].itemAr:'تجوّل وساعد الآخرين')+'</small>');
- const lock=!!(menuOpen||w.pray),fw=(K.KeyW||K.ArrowUp||ptr)?1:0,bw=(K.KeyS||K.ArrowDown)?1:0,tr=ptr?clamp((ptr.x/innerWidth-.5)*2.4,-1,1):((K.KeyD||K.ArrowRight)?1:0)-((K.KeyA||K.ArrowLeft)?1:0),run=K.ShiftLeft||K.ShiftRight;
+ const lock=!!(menuOpen||w.pray),fw=(K.KeyW||K.ArrowUp||ptr)?1:0,bw=(K.KeyS||K.ArrowDown)?1:0,tr=ptr?clamp((ptr.x/innerWidth-.5)*2.4,-1,1):((K.KeyD||K.ArrowRight)?1:0)-((K.KeyA||K.ArrowLeft)?1:0),run=K.KeyW||K.ShiftLeft||K.ShiftRight;
  const tgt=lock?0:(fw?(run?6.5:3.5):bw?-1.7:0);w.spd+=(tgt-w.spd)*Math.min(1,(tgt===0?10:7)*dt);if(!lock)w.yaw+=tr*(fw||bw?2.4:3.0)*dt;
  const fx=Math.sin(w.yaw),fz=Math.cos(w.yaw),nx=w.x+fx*w.spd*dt,nz=w.z+fz*w.spd*dt;if(!blocked(nx,w.z)&&!hitNpc(nx,w.z))w.x=nx;else w.spd*=.6;if(!blocked(w.x,nz)&&!hitNpc(w.x,nz))w.z=nz;else w.spd*=.6;
  const k2=Math.min(1,Math.abs(w.spd)/6.5);let o;
