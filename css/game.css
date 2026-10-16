@@ -437,3 +437,49 @@ body.walk-mode #toast {
   direction: rtl;
   unicode-bidi: plaintext;
 }
+
+
+/* Final professional dialogue pass: keep the world sharp behind the conversation. */
+body.walk-mode #menu {
+  background: linear-gradient(180deg, rgba(8,12,14,0), rgba(8,12,14,.06) 56%, rgba(8,12,14,.22));
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+body.walk-mode #menu .walk-dialog {
+  width: min(720px, calc(100vw - 40px));
+  max-height: min(40vh, 340px);
+  box-sizing: border-box;
+  padding: 13px 17px 14px;
+  gap: 9px;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+  background: linear-gradient(145deg, rgba(27,36,37,.985), rgba(14,20,22,.985));
+  box-shadow: 0 12px 34px rgba(0,0,0,.38), inset 0 1px 0 rgba(255,255,255,.06);
+}
+body.walk-mode #menu .dlg-text {
+  direction: rtl;
+  unicode-bidi: plaintext;
+  text-align: right;
+  line-height: 1.9;
+  font-size: clamp(15px, 1.2vw, 18px);
+  overflow-wrap: anywhere;
+}
+body.walk-mode #menu .dlg-choices button {
+  direction: rtl;
+  text-align: right;
+  font-size: clamp(13px, 1vw, 15px);
+}
+body.walk-mode #menu .dlg-close {
+  color: #fff5e4;
+  touch-action: manipulation;
+}
+@media (max-width: 700px) {
+  body.walk-mode #menu {
+    padding: 0 8px calc(76px + env(safe-area-inset-bottom,0px));
+  }
+  body.walk-mode #menu .walk-dialog {
+    width: calc(100vw - 16px);
+    max-height: min(46vh, 320px);
+    padding: 10px 11px 11px;
+  }
+}
