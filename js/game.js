@@ -824,8 +824,20 @@ function makeHeldErrandProps(w){
 }
 function syncHeldErrandItem(w){if(!w||!w.heldProps)return;Object.values(w.heldProps).forEach(m=>{m.visible=false});if(w.item){const id=ERR[w.err].id;if(w.heldProps[id])w.heldProps[id].visible=true}}
 function updateTrafficBikes(bikes,dt){if(!bikes)return;for(const o of bikes){const u=o.userData.traffic;if(!u)continue;
- u.phase+=dt*u.speed*5;u.progress=(u.progress+u.speed*dt/u.length)%1;
- const pt=u.route.getPointAt(u.progress),tan=u.route.getTangentAt(u.progress);
+ const oldProgress=u.progress,nextProgress=(oldProgress+u.speed*dt/u.length)%1,pt=u.route.getPointAt(nextProgress);
+ let stopForPerson=false;
+ if(walkMode&&WK){
+  const actors=[{x:WK.x,z:WK.z}];
+  for(const n of WK.npcs)if(n.visible)actors.push(n.position);
+  const current=u.route.getPointAt(oldProgress);
+  for(const actor of actors){
+   const before=Math.hypot(current.x-actor.x,current.z-actor.z),after=Math.hypot(pt.x-actor.x,pt.z-actor.z);
+   if(after<1.35&&(before>=1.35||after<=before+.008)){stopForPerson=true;break}
+  }
+ }
+ if(stopForPerson){u.crank.rotation.x=0;continue}
+ u.progress=nextProgress;u.phase+=dt*u.speed*5;
+ const tan=u.route.getTangentAt(u.progress);
  o.position.copy(pt);o.rotation.y=Math.atan2(tan.x,tan.z);
  u.wheels.forEach(w=>{w.rotation.x+=dt*u.speed/.34});u.crank.rotation.x=Math.sin(u.phase)*.38;
 }}
@@ -916,10 +928,13 @@ function blocked(x,z,r){r=r||.35;if(Math.abs(x)>77||z<WZ-77||z>WZ+77)return true
  function npcCollisionDepth(x,z){
   let d=0;const limit=Math.sqrt(.55);
   for(const n of WK.npcs){const u=n.userData;if(u.mode==='sit'||u.mode==='run'||u.mode==='follow')continue;const dx=x-n.position.x,dz=z-n.position.z,dist=Math.hypot(dx,dz);if(dist<limit)d+=limit-dist}
+  const bikes=WK&&WK.world&&WK.world.bikes;
+  if(bikes)for(const b of bikes){const dist=Math.hypot(x-b.position.x,z-b.position.z),clearance=1.25;if(dist<clearance)d+=clearance-dist}
   return d
  }
+ function hitTrafficBike(x,z,r=.35){const bikes=WK&&WK.world&&WK.world.bikes;if(!bikes)return false;for(const b of bikes)if(Math.hypot(x-b.position.x,z-b.position.z)<1.25+r)return true;return false}
  function walkStepAllowed(x,z,nx,nz,r=.35){
-  const currentBlocked=blocked(x,z,r)||hitNpc(x,z),nextBlocked=blocked(nx,nz,r)||hitNpc(nx,nz);
+  const currentBlocked=blocked(x,z,r)||hitNpc(x,z)||hitTrafficBike(x,z,r),nextBlocked=blocked(nx,nz,r)||hitNpc(nx,nz)||hitTrafficBike(nx,nz,r);
   if(!nextBlocked)return true;
   return currentBlocked&&walkCollisionDepth(nx,nz,r)+npcCollisionDepth(nx,nz)<walkCollisionDepth(x,z,r)+npcCollisionDepth(x,z)-.0001
  }
@@ -937,9 +952,11 @@ function npcUpdate(n,dt){const u=n.userData;{const fd=Math.hypot(n.position.x-WK
  if(u.waveAmt>.01){if(!posed)walkBodyPose(u.bones,{});u.waveBone.quaternion.multiply(qZ((1.45+Math.sin(t*8)*.16)*u.waveAmt))}}
 function showDlg(ar,en,ch){
   menuOpen=true;menuMode='dlg';WK.dlg=ch;$t.style.opacity=0;
-  const speaker=ar.includes('أمك:')?'أمك':ar.includes('أنت:')?'حديث مع صاحب المتجر':ar.includes('عجوز:')?'الجارة الكبيرة':ar.includes('قطة')?'موقف جديد':'حوار';
+  const vendor=ERR.find(e=>e.ownerName&&ar.includes(e.ownerName));
+  const speaker=ar.includes('أمك:')?'أمك':ar.includes('عجوز:')?'الجارة الكبيرة':ar.includes('طفل يبكي:')?'الطفل':ar.includes('البائعة:')?'صاحبة المتجر':ar.includes('صاحبك:')?'صديقك':vendor?vendor.ownerName:ar.includes('أنت:')?'حديث مع صاحب المتجر':ar.includes('قطة')?'موقف مع القطة':'حوار';
+  const avatar=speaker==='أمك'?'أم':speaker==='الطفل'?'طفل':speaker==='صديقك'?'صديق':vendor?'✦':speaker==='صاحبة المتجر'?'✦':'حوار';
   const display=String(ar||'').replace(/\n/g,'<br>');
-  $menu.innerHTML='<div class="walk-dialog" dir="rtl"><div class="dlg-heading"><div class="dlg-avatar">'+(speaker==='أمك'?'أم':speaker==='حديث مع صاحب المتجر'?'✦':'حوار')+'</div><div class="dlg-heading-copy"><small>ساعي الخير · حوار</small><strong>'+speaker+'</strong></div><div class="dlg-close">⋯</div></div><div class="dlg-text">'+display+'</div><div class="dlg-choices">'+ch.map((c,i)=>'<button data-i="'+i+'"><span class="dlg-choice-number">'+(['١','٢','٣','٤'][i]||String(i+1))+'</span><span>'+c.t+'</span><span class="dlg-choice-arrow">←</span></button>').join('')+'</div></div>';
+  $menu.innerHTML='<div class="walk-dialog" dir="rtl"><div class="dlg-heading"><div class="dlg-avatar">'+avatar+'</div><div class="dlg-heading-copy"><small>ساعي الخير · حوار</small><strong>'+speaker+'</strong></div><button type="button" class="dlg-close" data-close-dialog aria-label="إغلاق الحوار">×</button></div><div class="dlg-text" dir="rtl">'+display+'</div><div class="dlg-choices">'+ch.map((c,i)=>'<button type="button" data-i="'+i+'" dir="rtl"><span class="dlg-choice-number">'+(['١','٢','٣','٤'][i]||String(i+1))+'</span><span>'+c.t+'</span><span class="dlg-choice-arrow">←</span></button>').join('')+'</div></div>';
   $menu.style.display='flex'
 }
 function dlgChoice(i){const c=WK&&WK.dlg&&WK.dlg[i];closeMenu();if(c&&c.fn)c.fn()}
@@ -1014,7 +1031,7 @@ function talkShop(i){const w=WK,e=ERR[i],shopItem=w.items.find(it=>it.id===e.id)
  }
 let walkShadowCellX=NaN,walkShadowCellZ=NaN;
 function syncWalkShadowAnchor(x,z,force=false){const gx=Math.floor(x/24),gz=Math.floor((z-WZ)/24);if(!force&&gx===walkShadowCellX&&gz===walkShadowCellZ)return;walkShadowCellX=gx;walkShadowCellZ=gz;const tx=gx*24,tz=WZ+gz*24;sunL.position.set(tx-34,36,tz-48);sunL.target.position.set(tx,0,tz);sunL.target.updateMatrixWorld();R.shadowMap.needsUpdate=true}
-function configureWalkVisuals(x,z){gnd.visible=false;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=1.08;R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;S.fog.near=38;S.fog.far=300;sunL.castShadow=true;gnd.receiveShadow=true;sunL.shadow.mapSize.set((navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512,(navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512);sunL.shadow.camera.left=-38;sunL.shadow.camera.right=38;sunL.shadow.camera.top=34;sunL.shadow.camera.bottom=-16;sunL.shadow.camera.near=.5;sunL.shadow.camera.far=240;sunL.shadow.camera.updateProjectionMatrix();syncWalkShadowAnchor(x,z,true)}
+function configureWalkVisuals(x,z){gnd.visible=false;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=.96;R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;S.fog.near=850;S.fog.far=1100;sunL.castShadow=true;gnd.receiveShadow=true;sunL.shadow.mapSize.set((navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512,(navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512);sunL.shadow.camera.left=-38;sunL.shadow.camera.right=38;sunL.shadow.camera.top=34;sunL.shadow.camera.bottom=-16;sunL.shadow.camera.near=.5;sunL.shadow.camera.far=240;sunL.shadow.camera.updateProjectionMatrix();syncWalkShadowAnchor(x,z,true)}
 function startWalkMode(){started=true;walkMode=true;document.body.classList.add('walk-mode');configureWalkVisuals(-70.2,Zl(-50));$('bk').style.display='block';$('goals').style.display='block';$('ov').style.display='none';initAudio();mg.gain.value=0;AC.resume();
  chunks.forEach(g=>{S.remove(g);g.userData.d.forEach(d=>d.dispose())});chunks.clear();mosqueList.length=0;tlights.length=0;rider.visible=false;if(mBeam)mBeam.visible=false;$('spd').style.display='none';
  const W=buildAlley(),FQ=restoreFamilyQuest();WK={world:W,rects:W.rects,x:-70.2,z:Zl(-50),yaw:Math.PI/2,spd:0,ph:0,pp:{lf:0,rf:0,al:0,ar:0,lean:0,twist:0,roll:0},q:FQ.q,err:FQ.err,item:FQ.item,errandBudget:FQ.errandBudget,changeDue:FQ.changeDue,heldProps:null,jumpY:0,jumpV:0,onGround:true,fol:null,pray:null,pe:false,items:[],npcs:[],ev:{},cam:new T.Vector3(),dlg:null,mapT:0};
@@ -1131,7 +1148,7 @@ function walkLoop(dt){const w=WK;w.fc=(w.fc||0)+1;
  if(w.pray){const p=w.pray;p.t+=dt;const P=PRY[p.k],dur=P.r*2.4,f=clamp(p.t/dur,0,1);
   if(P.j&&f<.4){setH($('prT'),'خطبة الجمعة');setH($('prR'),'استماعٌ وإنصات')}else{setH($('prT'),(P.t?'':'الصلاة · ')+P.n);const f2=P.j?(f-.4)/.6:f;setH($('prR'),'الركعة '+Math.min(P.r,1+Math.floor(Math.max(0,f2)*P.r))+' / '+P.r)}$('prB').style.width=(f*100)+'%';
   if(p.t>=dur){w.pray=null;w.boy.visible=true;$('pray').style.display='none';pDone=true;updQuest();const rw=P.j?150:P.t?120:100;SV.prayers++;pay(rw,'تقبّل الله منا ومنك   \u2066+¥'+rw+'\u2069')}}
- let near=null,nd=1e9;for(const it of w.items){if(w.fol&&w.fol.npc===(it.ev&&it.ev.npc))continue;const d=Math.hypot(w.x-it.x,w.z-it.z);if(d<it.r&&d<nd){near=it;nd=d}}
+ let near=null,nd=1e9;for(const it of w.items){if(w.fol&&w.fol.npc===(it.ev&&it.ev.npc))continue;if(w.item&&it.id!=='mom'&&ERR.some(e=>e.id===it.id))continue;const d=Math.hypot(w.x-it.x,w.z-it.z);if(d<it.r&&d<nd){near=it;nd=d}}
  let gn=null;if(!near)for(const n of w.npcs){const u=n.userData;if(u.mode==='sit'||u.mode==='argue'||u.mode==='follow')continue;const d=Math.hypot(w.x-n.position.x,w.z-n.position.z);if(d<1.7&&d<nd){gn=n;nd=d}}
  const eNow=K.KeyE||actHeld,eE=eNow&&!w.pe;w.pe=!!eNow;
  if(!lock){if(w.fol){$a.style.display='block';$a.textContent='أكمل مرافقة الشخص إلى العلامة الذهبية'}else if(near){$a.style.display='block';$a.textContent='اضغط E: '+walkActionLabel(near);if(eE)near.fn(near)}else if(gn){$a.style.display='block';$a.textContent='اضغط E لإلقاء السلام';if(eE)greet(gn)}else $a.style.display='none'}
@@ -1164,7 +1181,7 @@ function confessChoice(i){menuOpen=false;$menu.style.display='none';$menu.innerH
  if(i===0){money+=30;SV.money=money;svSave();fan();coin();say('The neighbor smiles: "Thank you for telling me. Let\'s fix it together." +¥30')}
  else{say('The neighbor looks a little sad and walks back inside. No one saw... but you did.')}
  clr();mi=pickNext();spawn()}
-$menu.addEventListener('click',e=>{const i=e.target.dataset.i;if(i==null)return;if(menuMode==='confess')confessChoice(+i);else if(menuMode==='call')callChoice(+i);else if(menuMode==='fam')famChoice(+i);else if(menuMode==='fast')fastChoice(+i);else if(menuMode==='quiz')quizChoice(+i);else if(menuMode==='pm')pmChoice(+i);else if(menuMode==='dlg')dlgChoice(+i);else buy(+i)});
+$menu.addEventListener('click',e=>{if(e.target.closest('[data-close-dialog]')){closeMenu();return}const button=e.target.closest('button[data-i]');if(!button)return;const i=button.dataset.i;if(i==null)return;if(menuMode==='confess')confessChoice(+i);else if(menuMode==='call')callChoice(+i);else if(menuMode==='fam')famChoice(+i);else if(menuMode==='fast')fastChoice(+i);else if(menuMode==='quiz')quizChoice(+i);else if(menuMode==='pm')pmChoice(+i);else if(menuMode==='dlg')dlgChoice(+i);else buy(+i)});
 addEventListener('keydown',e=>{if(!menuOpen||!/^Digit[123]$/.test(e.code))return;const i=Number(e.code.slice(-1))-1,btn=$menu.querySelector('button[data-i="'+i+'"]');if(btn){e.preventDefault();btn.click()}});
 function mis(dt){
  if(!started)return;
