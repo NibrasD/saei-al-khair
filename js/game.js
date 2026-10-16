@@ -703,13 +703,13 @@ function buildAlley(){const g=new T.Group(),rects=[],storefronts=[],rnd=mkRng(42
  const signNames=['خبز الصباح · أبو علي','صيدلية الشفاء · د. سلمى','خيرات أم رامي · أم رامي','حلويات سكر · أم ليلى','مكتبة الحكمة · عم حسن','عطارة البركة · الحاج محمود'],signM=signNames.map((nm,k)=>new T.MeshBasicMaterial({map:cv(256,56,q=>{q.fillStyle=['#8a2b22','#1f5f8a','#2c7a45','#a0428a','#6b4a2a','#2c6b6b'][k];q.fillRect(0,0,256,56);q.fillStyle='#fff';q.strokeStyle='#e9c46a';q.lineWidth=3;q.strokeRect(4,4,248,48);q.direction='rtl';q.lang='ar';q.font='bold 23px Cairo, Tahoma, Arial, sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillText(nm,128,30,226)})}));signM.forEach(m=>{if(m.map){m.map.encoding=T.sRGBEncoding;m.map.needsUpdate=true}});
  // Build the road grid from disjoint surfaces. The old full-length strips overlapped at every junction,
  // causing z-fighting that appeared as flashing white patches.
- const roadStrip=(x,z,width,depth)=>{const m=new T.Mesh(new T.PlaneGeometry(width,depth).rotateX(-Math.PI/2),asM);m.position.set(x,.065,z);g.add(m)};
+ const roadStrip=(x,z,length,alongX=false)=>{const geo=new T.PlaneGeometry(10,length).rotateX(-Math.PI/2);if(alongX)geo.rotateY(Math.PI/2);const uv=geo.getAttribute('uv');for(let k=0;k<uv.count;k++)uv.setY(k,uv.getY(k)*length/156);uv.needsUpdate=true;const m=new T.Mesh(geo,asM);m.position.set(x,.065,z);g.add(m)};
  for(let a=0;a<5;a++){
   const vertical=[[WZ-78,NZ[0]-5],...NZ.slice(0,-1).map((v,i)=>[v+5,NZ[i+1]-5]),[NZ[4]+5,WZ+78]];
-  vertical.forEach(([lo,hi])=>{if(hi>lo)roadStrip(LN[a],(lo+hi)/2,10,hi-lo)});
+  vertical.forEach(([lo,hi])=>{if(hi>lo)roadStrip(LN[a],(lo+hi)/2,hi-lo)});
   const horizontal=[[-78,LN[0]-5],...LN.slice(0,-1).map((v,i)=>[v+5,LN[i+1]-5]),[LN[4]+5,78]];
-  horizontal.forEach(([lo,hi])=>{if(hi>lo)roadStrip((lo+hi)/2,NZ[a],hi-lo,10)});
-  for(let b=0;b<5;b++)roadStrip(LN[a],NZ[b],10,10)
+  horizontal.forEach(([lo,hi])=>{if(hi>lo)roadStrip((lo+hi)/2,NZ[a],hi-lo,true)});
+  for(let b=0;b<5;b++)roadStrip(LN[a],NZ[b],10)
  }
  // On-foot road markings: lane edges, broken centre lines and zebra crossings at the inner junctions.
  for(let a=0;a<5;a++){
