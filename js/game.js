@@ -828,10 +828,17 @@ function makeHeldErrandProps(w){
  Object.values(w.heldProps).forEach(m=>{m.visible=false;group.add(m)});w.heldGroup=group;
 }
 function syncHeldErrandItem(w){if(!w||!w.heldProps)return;Object.values(w.heldProps).forEach(m=>{m.visible=false});if(w.item){const id=ERR[w.err].id;if(w.heldProps[id])w.heldProps[id].visible=true}}
+function trafficRouteBlocked(x,z){
+ if(!WK)return false;
+ const pad=.48;
+ for(const q of WK.rects||[])if(x>=q.x0-pad&&x<=q.x1+pad&&z>=q.z0-pad&&z<=q.z1+pad)return true;
+ for(const q of WK.world.storefronts||[])if(x>=q.x0-pad&&x<=q.x1+pad&&z>=q.z0-pad&&z<=q.z1+pad)return true;
+ return false
+}
 function updateTrafficBikes(bikes,dt){if(!bikes)return;for(const o of bikes){const u=o.userData.traffic;if(!u)continue;
  const oldProgress=u.progress,nextProgress=(oldProgress+u.speed*dt/u.length)%1,pt=u.route.getPointAt(nextProgress);
- let stopForPerson=false;
- if(walkMode&&WK){
+ let stopForPerson=walkMode&&WK&&trafficRouteBlocked(pt.x,pt.z);
+ if(walkMode&&WK&&!stopForPerson){
   const actors=[{x:WK.x,z:WK.z}];
   for(const n of WK.npcs)if(n.visible)actors.push(n.position);
   const current=u.route.getPointAt(oldProgress);
