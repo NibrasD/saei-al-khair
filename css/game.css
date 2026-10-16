@@ -384,3 +384,56 @@ body.walk-mode #menu .dlg-choices .dlg-choice-arrow{
   body.walk-mode #menu .dlg-choices button{grid-template-columns:27px minmax(0,1fr) 15px;gap:7px;padding:8px 9px;font-size:13px}
   body.walk-mode #menu .dlg-choices .dlg-choice-number{width:24px;height:24px;min-width:24px}
 }
+
+
+/* Final accessibility and RTL pass for walking-mode interactions. */
+body.walk-mode #mis,
+body.walk-mode #goals,
+body.walk-mode #act,
+body.walk-mode #toast,
+body.walk-mode #hud,
+body.walk-mode #clk,
+body.walk-mode #keys,
+body.walk-mode #menu .walk-dialog,
+body.walk-mode #menu .dlg-heading,
+body.walk-mode #menu .dlg-heading-copy,
+body.walk-mode #menu .dlg-text,
+body.walk-mode #menu .dlg-choices,
+body.walk-mode #menu .dlg-choices button {
+  direction: rtl;
+  unicode-bidi: plaintext;
+}
+body.walk-mode #mis,
+body.walk-mode #goals,
+body.walk-mode #menu .dlg-heading-copy,
+body.walk-mode #menu .dlg-text,
+body.walk-mode #menu .dlg-choices button {
+  text-align: right;
+}
+body.walk-mode #menu .dlg-text {
+  line-height: 2;
+  overflow-wrap: anywhere;
+  word-break: normal;
+  font-kerning: normal;
+}
+body.walk-mode #menu .dlg-choices button {
+  cursor: pointer;
+  touch-action: manipulation;
+}
+body.walk-mode #menu .dlg-choices button:focus-visible,
+body.walk-mode #menu .dlg-close:focus-visible {
+  outline: 2px solid #f2d28c;
+  outline-offset: 2px;
+}
+body.walk-mode #menu .dlg-close {
+  padding: 0;
+  border: 1px solid rgba(239,201,126,.45);
+  background: rgba(255,255,255,.06);
+  font: 700 20px/1 "Cairo","Noto Sans Arabic",Tahoma,Arial,sans-serif;
+  cursor: pointer;
+  flex: 0 0 28px;
+}
+body.walk-mode #toast {
+  direction: rtl;
+  unicode-bidi: plaintext;
+}
