@@ -925,18 +925,18 @@ function blocked(x,z,r){r=r||.35;if(Math.abs(x)>77||z<WZ-77||z>WZ+77)return true
   for(const q of WK.rects){const x0=q.x0-r,x1=q.x1+r,z0=q.z0-r,z1=q.z1+r;if(x>x0&&x<x1&&z>z0&&z<z1)d+=Math.min(x-x0,x1-x,z-z0,z1-z)+.001}
   return d
  }
- function npcCollisionDepth(x,z){
+ function npcCollisionDepth(x,z,r=.35){
   let d=0;const limit=Math.sqrt(.55);
   for(const n of WK.npcs){const u=n.userData;if(u.mode==='sit'||u.mode==='run'||u.mode==='follow')continue;const dx=x-n.position.x,dz=z-n.position.z,dist=Math.hypot(dx,dz);if(dist<limit)d+=limit-dist}
   const bikes=WK&&WK.world&&WK.world.bikes;
-  if(bikes)for(const b of bikes){const dist=Math.hypot(x-b.position.x,z-b.position.z),clearance=1.25;if(dist<clearance)d+=clearance-dist}
+  if(bikes)for(const b of bikes){const dist=Math.hypot(x-b.position.x,z-b.position.z),clearance=1.25+r;if(dist<clearance)d+=clearance-dist}
   return d
  }
  function hitTrafficBike(x,z,r=.35){const bikes=WK&&WK.world&&WK.world.bikes;if(!bikes)return false;for(const b of bikes)if(Math.hypot(x-b.position.x,z-b.position.z)<1.25+r)return true;return false}
  function walkStepAllowed(x,z,nx,nz,r=.35){
   const currentBlocked=blocked(x,z,r)||hitNpc(x,z)||hitTrafficBike(x,z,r),nextBlocked=blocked(nx,nz,r)||hitNpc(nx,nz)||hitTrafficBike(nx,nz,r);
   if(!nextBlocked)return true;
-  return currentBlocked&&walkCollisionDepth(nx,nz,r)+npcCollisionDepth(nx,nz)<walkCollisionDepth(x,z,r)+npcCollisionDepth(x,z)-.0001
+  return currentBlocked&&walkCollisionDepth(nx,nz,r)+npcCollisionDepth(nx,nz,r)<walkCollisionDepth(x,z,r)+npcCollisionDepth(x,z,r)-.0001
  }
 function nextNode(u){const nb=[],i=u.node[0],j=u.node[1],rand=u.rng||Math.random;[[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{const a=i+d[0],b=j+d[1];if(a>=0&&a<5&&b>=0&&b<5&&!(u.prev&&u.prev[0]===a&&u.prev[1]===b))nb.push([a,b])});const nx=nb.length?nb[(rand()*nb.length)|0]:u.prev;u.prev=u.node;u.node=nx;u.tx=LN[nx[0]]+u.off;u.tz=NZ[nx[1]]+u.off}
 function npcUpdate(n,dt){const u=n.userData;{const fd=Math.hypot(n.position.x-WK.x,n.position.z-WK.z);const far=fd>58;if(far!==!n.visible){n.visible=!far}if(far&&u.mode!=='walk')return}u.waveAmt+=(u.waveTarget-u.waveAmt)*(1-Math.exp(-7*dt));if(u.waveT>0){u.waveT-=dt;if(u.waveT<=0)u.waveTarget=0}let posed=false;
