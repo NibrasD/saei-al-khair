@@ -282,13 +282,38 @@ function purr(){if(!AC)return;const t=AC.currentTime,o=AC.createOscillator(),g=A
 function coin(){if(!AC||muted)return;const t=AC.currentTime;[[988,0],[1319,.07],[1568,.14]].forEach(([f,dl])=>{const o=AC.createOscillator(),g=AC.createGain();o.type='sine';o.frequency.value=f;g.gain.setValueAtTime(.09,t+dl);g.gain.exponentialRampToValueAtTime(.0001,t+dl+.28);o.connect(g);g.connect(mg);o.start(t+dl);o.stop(t+dl+.3)})}
 function cueNotes(notes,level=.026){if(!AC||muted)return;const now=AC.currentTime;for(const [freq,delay,duration] of notes){const o=AC.createOscillator(),g=AC.createGain(),at=now+delay;o.type='sine';o.frequency.setValueAtTime(freq,at);g.gain.setValueAtTime(.0001,at);g.gain.exponentialRampToValueAtTime(level,at+.012);g.gain.exponentialRampToValueAtTime(.0001,at+duration);o.connect(g);g.connect(mg);o.start(at);o.stop(at+duration+.02)}}
 function dialogCue(){cueNotes([[660,0,.085],[880,.045,.11]],.018)}
+// Use the browser's Arabic speech voice so characters actually speak their dialogue.
+// Voice availability depends on the player's operating system/browser.
+function availableArabicVoices(){if(!('speechSynthesis'in window))return[];return window.speechSynthesis.getVoices().filter(v=>/^ar([_-]|$)/i.test(v.lang||''))}
+function speakArabicDialogue(text){
+ if(!walkMode||muted||!('speechSynthesis'in window)||!('SpeechSynthesisUtterance'in window))return;
+ const synth=window.speechSynthesis,voices=availableArabicVoices(),parts=String(text||'').split(/\n+/).map(s=>s.replace(/<[^>]*>/g,' ').replace(/[«»“”]/g,'').replace(/\s+/g,' ').trim()).filter(Boolean);
+ const speechParts=parts.map(part=>{
+  const m=part.match(/^([^:：]{1,24})[:：]\s*(.+)$/);
+  return m?{label:m[1],text:m[2]}:{label:'الشخصية',text:part}
+ }).filter(p=>p.text);
+ if(!speechParts.length)return;
+ synth.cancel();
+ speechParts.forEach((part,index)=>{
+  const u=new SpeechSynthesisUtterance(part.text);
+  u.lang='ar-EG';u.rate=.92;u.pitch=/أمك|السيدة|العجوز|البائعة|المالكة/.test(part.label)?1.08:/أنت|الولد|صاحب|الخباز|الصيدلي/.test(part.label)?.96:1;
+  if(voices.length){
+   const egyptian=voices.filter(v=>/^ar[-_]EG$/i.test(v.lang||''));
+   const regional=egyptian.length?egyptian:voices;
+   const preferred=regional.find(v=>/natural|neural|google|microsoft/i.test(v.name||''))||regional[0];
+   if(preferred)u.voice=preferred
+  }
+  u.volume=.82;
+  synth.speak(u)
+ })
+}
 function greetingCue(){cueNotes([[587.33,0,.12],[739.99,.09,.15],[880,.19,.18]],.024)}
 function footstepSound(running=false){if(!AC||muted)return;const now=AC.currentTime,o=AC.createOscillator(),g=AC.createGain(),f=AC.createBiquadFilter();o.type='triangle';o.frequency.setValueAtTime(running?125:96,now);o.frequency.exponentialRampToValueAtTime(running?58:48,now+.085);f.type='lowpass';f.frequency.value=420;g.gain.setValueAtTime(.0001,now);g.gain.exponentialRampToValueAtTime(running?.024:.016,now+.008);g.gain.exponentialRampToValueAtTime(.0001,now+.105);o.connect(f);f.connect(g);g.connect(mg);o.start(now);o.stop(now+.12);if(NB){const n=AC.createBufferSource(),nf=AC.createBiquadFilter(),ng=AC.createGain();n.buffer=NB;nf.type='lowpass';nf.frequency.value=650;ng.gain.setValueAtTime(.0001,now);ng.gain.exponentialRampToValueAtTime(running?.012:.008,now+.006);ng.gain.exponentialRampToValueAtTime(.0001,now+.045);n.connect(nf);nf.connect(ng);ng.connect(mg);n.start(0,Math.random());n.stop(now+.05)}}
 function soundCat(){if(!AC||muted)return;meow()}
  // input
 const K={};let ptr=null,started=false;
 addEventListener('keydown',e=>{K[e.code]=1;if(started&&e.code==='Space'){if(walkMode){e.preventDefault();if(!e.repeat&&WK&&WK.onGround&&!menuOpen&&!WK.pray){WK.jumpV=5.4;WK.jumpY=.01;WK.onGround=false}}else{e.preventDefault();bell();scare();if(mi===0&&tg&&Math.abs(tg.sd-s)<16){tg.g.userData.alert=1;tg.g.userData.head.rotation.y=.7;say('The cat perks up its ears')}}}if(e.code==='KeyM')toggleMute()});
-function toggleMute(){muted=!muted;if(mg)mg.gain.value=muted?0:.5;$('mute').textContent=muted?'🔇':'🔊'}
+function toggleMute(){muted=!muted;if(mg)mg.gain.value=muted?0:.5;if(muted&&'speechSynthesis'in window)window.speechSynthesis.cancel();$('mute').textContent=muted?'🔇':'🔊'}
 $('mute').addEventListener('pointerdown',e=>{e.stopPropagation();toggleMute()});
 addEventListener('keyup',e=>K[e.code]=0);
 R.domElement.addEventListener('pointerdown',e=>{ptr={x:e.clientX}});
@@ -676,18 +701,27 @@ function buildAlley(){const g=new T.Group(),rects=[],storefronts=[],rnd=mkRng(42
  });asT.encoding=T.sRGBEncoding;asT.needsUpdate=true;asT.wrapS=asT.wrapT=T.RepeatWrapping;asT.repeat.set(1,19);asT.anisotropy=Math.min(8,R.capabilities.getMaxAnisotropy());
  const asM=L(0xffffff,{map:asT}),SWM=L(0x827b70),CURB=L(0x70695f),jointM=L(0x625b52),zebM=new T.MeshBasicMaterial({color:0xf4f1e8}),laneWhite=new T.MeshBasicMaterial({color:0xded8c9}),laneGold=new T.MeshBasicMaterial({color:0xe0bf74}),bikeCols=[0xc0392b,0x2980b9,0xecf0f1,0x27ae60,0xf1c40f,0x7f8c8d],tireM=L(0x1e1e22),bikeSteelM=L(0x9ca6aa),bikeSkinM=L(0xc58a69);
  const signNames=['خبز الصباح · أبو علي','صيدلية الشفاء · د. سلمى','خيرات أم رامي · أم رامي','حلويات سكر · أم ليلى','مكتبة الحكمة · عم حسن','عطارة البركة · الحاج محمود'],signM=signNames.map((nm,k)=>new T.MeshBasicMaterial({map:cv(256,56,q=>{q.fillStyle=['#8a2b22','#1f5f8a','#2c7a45','#a0428a','#6b4a2a','#2c6b6b'][k];q.fillRect(0,0,256,56);q.fillStyle='#fff';q.strokeStyle='#e9c46a';q.lineWidth=3;q.strokeRect(4,4,248,48);q.direction='rtl';q.lang='ar';q.font='bold 23px Cairo, Tahoma, Arial, sans-serif';q.textAlign='center';q.textBaseline='middle';q.fillText(nm,128,30,226)})}));signM.forEach(m=>{if(m.map){m.map.encoding=T.sRGBEncoding;m.map.needsUpdate=true}});
- for(let a=0;a<5;a++){const ns=new T.Mesh(new T.PlaneGeometry(10,156,1,6).rotateX(-Math.PI/2),asM);ns.position.set(LN[a],.04,WZ);g.add(ns);const ew=new T.Mesh(new T.PlaneGeometry(10,156,1,6).rotateX(-Math.PI/2).rotateY(Math.PI/2),asM);ew.position.set(0,.045,NZ[a]);g.add(ew)}
+ // Build the road grid from disjoint surfaces. The old full-length strips overlapped at every junction,
+ // causing z-fighting that appeared as flashing white patches.
+ const roadStrip=(x,z,width,depth)=>{const m=new T.Mesh(new T.PlaneGeometry(width,depth).rotateX(-Math.PI/2),asM);m.position.set(x,.065,z);g.add(m)};
+ for(let a=0;a<5;a++){
+  const vertical=[[WZ-78,NZ[0]-5],...NZ.slice(0,-1).map((v,i)=>[v+5,NZ[i+1]-5]),[NZ[4]+5,WZ+78]];
+  vertical.forEach(([lo,hi])=>{if(hi>lo)roadStrip(LN[a],(lo+hi)/2,10,hi-lo)});
+  const horizontal=[[-78,LN[0]-5],...LN.slice(0,-1).map((v,i)=>[v+5,LN[i+1]-5]),[LN[4]+5,78]];
+  horizontal.forEach(([lo,hi])=>{if(hi>lo)roadStrip((lo+hi)/2,NZ[a],hi-lo,10)});
+  for(let b=0;b<5;b++)roadStrip(LN[a],NZ[b],10,10)
+ }
  // On-foot road markings: lane edges, broken centre lines and zebra crossings at the inner junctions.
  for(let a=0;a<5;a++){
-  for(const side of[-1,1]){const edge=new T.Mesh(new T.BoxGeometry(.08,.025,151),laneWhite);edge.position.set(LN[a]+side*4.55,.055,WZ);g.add(edge)}
-  for(let z=WZ-72;z<WZ+72;z+=10){const dash=new T.Mesh(new T.BoxGeometry(.095,.028,3.7),laneGold);dash.position.set(LN[a],.058,z+1.4);g.add(dash)}
-  for(const side of[-1,1]){const edge=new T.Mesh(new T.BoxGeometry(151,.025,.08),laneWhite);edge.position.set(0,.055,NZ[a]+side*4.55);g.add(edge)}
-  for(let x=-72;x<72;x+=10){const dash=new T.Mesh(new T.BoxGeometry(3.7,.028,.095),laneGold);dash.position.set(x+1.4,.058,NZ[a]);g.add(dash)}
+  for(const side of[-1,1]){const edge=new T.Mesh(new T.BoxGeometry(.08,.025,151),laneWhite);edge.position.set(LN[a]+side*4.55,.085,WZ);g.add(edge)}
+  for(let z=WZ-72;z<WZ+72;z+=10){const dash=new T.Mesh(new T.BoxGeometry(.095,.028,3.7),laneGold);dash.position.set(LN[a],.087,z+1.4);g.add(dash)}
+  for(const side of[-1,1]){const edge=new T.Mesh(new T.BoxGeometry(151,.025,.08),laneWhite);edge.position.set(0,.085,NZ[a]+side*4.55);g.add(edge)}
+  for(let x=-72;x<72;x+=10){const dash=new T.Mesh(new T.BoxGeometry(3.7,.028,.095),laneGold);dash.position.set(x+1.4,.087,NZ[a]);g.add(dash)}
  }
   // Removed artificial green/white lane overlays that produced glowing bands.
  for(let a=1;a<4;a++)for(let b=1;b<4;b++)for(const side of[-1,1])for(let k=-2;k<=2;k++){
-  const v=new T.Mesh(new T.BoxGeometry(6.9,.035,.34),zebM);v.position.set(LN[a],.063,NZ[b]+side*(5.1+k*.5));g.add(v);
-  const h=new T.Mesh(new T.BoxGeometry(.34,.035,6.9),zebM);h.position.set(LN[a]+side*(5.1+k*.5),.064,NZ[b]);g.add(h)
+  const v=new T.Mesh(new T.BoxGeometry(6.9,.035,.34),zebM);v.position.set(LN[a],.086,NZ[b]+side*(5.1+k*.5));g.add(v);
+  const h=new T.Mesh(new T.BoxGeometry(.34,.035,6.9),zebM);h.position.set(LN[a]+side*(5.1+k*.5),.086,NZ[b]);g.add(h)
  }
  const trafficBikes=[];
  const car=(x,z,alongZ,col,limits)=>{
@@ -963,7 +997,7 @@ function npcUpdate(n,dt){const u=n.userData;{const fd=Math.hypot(n.position.x-WK
  else if(u.mode==='run'){if(Math.hypot(WK.x-n.position.x,WK.z-n.position.z)<1.7){walkBodyPose(u.bones,{});posed=true}else{u.a+=dt*u.w;const sx=WK.world.sx,sz=WK.world.sz;n.position.set(sx+Math.cos(u.a)*u.r,WALK_Y,sz+Math.sin(u.a)*u.r);n.rotation.y=Math.atan2(-Math.sin(u.a),Math.cos(u.a))*(u.w>0?1:-1);u.ph+=dt*11;walkBodyPose(u.bones,walkOff(u.ph,.5));posed=true}}
  if(u.waveAmt>.01){if(!posed)walkBodyPose(u.bones,{});u.waveBone.quaternion.multiply(qZ((1.45+Math.sin(t*8)*.16)*u.waveAmt))}}
 function showDlg(ar,en,ch){
-  menuOpen=true;menuMode='dlg';WK.dlg=ch;$t.style.opacity=0;dialogCue();
+  menuOpen=true;menuMode='dlg';WK.dlg=ch;$t.style.opacity=0;dialogCue();speakArabicDialogue(ar);
   const vendor=ERR.find(e=>e.ownerName&&ar.includes(e.ownerName));
   const speaker=ar.includes('أمك:')?'أمك':ar.includes('عجوز:')?'الجارة الكبيرة':ar.includes('طفل يبكي:')?'الطفل':ar.includes('البائعة:')?'صاحبة المتجر':ar.includes('صاحبك:')?'صديقك':vendor?vendor.ownerName:ar.includes('أنت:')?'حديث مع صاحب المتجر':ar.includes('قطة')?'موقف مع القطة':'حوار';
   const avatar=speaker==='أمك'?'أم':speaker==='الطفل'?'طفل':speaker==='صديقك'?'صديق':vendor?'✦':speaker==='صاحبة المتجر'?'✦':'حوار';
@@ -974,7 +1008,7 @@ function showDlg(ar,en,ch){
 function dlgChoice(i){const c=WK&&WK.dlg&&WK.dlg[i];closeMenu();if(c&&c.fn)c.fn()}
 function pay(n,msg){money+=n;SV.money=money;svSave();if(n>0){fan();coin()}if(msg)say(msg)}
 function faceCharacter(n){if(!WK||!n)return;WK.yaw=Math.atan2(n.position.x-WK.x,n.position.z-WK.z);WK.boy.rotation.y=WK.yaw;n.rotation.y=Math.atan2(WK.x-n.position.x,WK.z-n.position.z)}
-function greet(n){const u=n.userData,first=!u.salamGiven;faceCharacter(n);u.waveTarget=1;u.waveT=2.4;setHumanEmotion(n,'happy');setHumanEmotion(WK&&WK.boy,'happy');greetingCue();if(first){u.salamGiven=true;SV.salams=(SV.salams||0)+1;svSave();say('السلام عليكم ورحمة الله وبركاته.');}else say('وعليكم السلام يا بني، حيّاك الله مرة أخرى.')}
+function greet(n){const u=n.userData,first=!u.salamGiven;faceCharacter(n);u.waveTarget=1;u.waveT=2.4;setHumanEmotion(n,'happy');setHumanEmotion(WK&&WK.boy,'happy');greetingCue();const reply=first?['وعليكم السلام ورحمة الله وبركاته','وعليكم السلام يا بني','أهلًا بك يا ولدي'][(Math.random()*3)|0]:'وعليكم السلام يا بني، حيّاك الله مرة أخرى.';speakArabicDialogue('أنت: السلام عليكم ورحمة الله وبركاته\nالشخص: '+reply);if(first){u.salamGiven=true;SV.salams=(SV.salams||0)+1;svSave();say('السلام عليكم ورحمة الله وبركاته — '+reply)}else say(reply)}
 function escort(npc,dest,ev,msg,reward){
   const w=WK;w.fol={npc,dest,label:npc.userData.kind==='kid'?'أوصل الطفل إلى الساحة':'أوصل السيدة إلى منزلها',done(){
    w.fol=null;ev.done=true;saveSideQuest(ev);const u=npc.userData;u.mode='stand';u.waveTarget=1;u.waveT=5;setHumanEmotion(npc,'happy');setHumanEmotion(WK.boy,'happy');
