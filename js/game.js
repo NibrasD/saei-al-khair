@@ -1065,7 +1065,7 @@ const ERR=[{id:'baker',ar:'الخبّاز أبو علي',shopName:'خبز الص
  function familyChapterState(){const old=SV.familyChapter||{},valid=Array.isArray(old.completed)?old.completed.filter(id=>ERR.some(e=>e.id===id)):[];return SV.familyChapter={rounds:Math.max(0,Number(old.rounds)||0),completed:[...new Set(valid)]}}
  function recordFamilyErrand(e){const ch=familyChapterState();if(!ch.completed.includes(e.id))ch.completed.push(e.id);if(ch.completed.length>=ERR.length){ch.completed=[];ch.rounds++;pay(100,'اكتمل الفصل '+ch.rounds+': أنجزت مشاوير الأسرة الأربعة بأمانة. مكافأة إتمام الفصل: ١٠٠ جنيه.')}else svSave()}
 
-function activeWalkObjective(w=WK){if(!w)return null;if(pPending&&!pDone)return w.items.find(i=>i.id==='mosque')||null;if(w.fol)return{id:'escort-target',x:w.fol.dest.x,z:w.fol.dest.z,label:w.fol.label||'وجهة المساعدة'};const id=w.q===1?ERR[w.err].id:'mom';return w.items.find(i=>i.id===id)||null}
+function activeWalkObjective(w=WK){if(!w)return null;if(pPending&&!pDone)return w.items.find(i=>i.id==='mosque')||null;if(w.fol)return{id:'escort-target',x:w.fol.dest.x,z:w.fol.dest.z,label:w.fol.label||'وجهة المساعدة'};if(w.q===1&&w.err===2&&w.pharmacy){if(!w.pharmacy.entered)return w.items.find(i=>i.id==='pharmDoor')||null;if(w.pharmacy.queueLeft>0)return w.items.find(i=>i.id==='pharmQueue')||null;return w.items.find(i=>i.id==='pharm')||null}const id=w.q===1?ERR[w.err].id:'mom';return w.items.find(i=>i.id===id)||null}
 function makeWalkGoalMarker(){const g=new T.Group(),gold=disableTownTerrainWarp(new T.MeshBasicMaterial({color:0xffd166,transparent:true,opacity:.96,depthWrite:false,toneMapped:false})),beamM=disableTownTerrainWarp(new T.MeshBasicMaterial({color:0xffd166,transparent:true,opacity:.16,depthWrite:false,side:T.DoubleSide,toneMapped:false})),ring=new T.Mesh(new T.TorusGeometry(.78,.075,8,28),gold.clone()),beam=new T.Mesh(new T.CylinderGeometry(.09,.34,2.35,10,1,true),beamM),cap=new T.Mesh(new T.OctahedronGeometry(.22),gold.clone());ring.rotation.x=Math.PI/2;ring.position.y=.08;beam.position.y=1.25;cap.position.y=2.6;g.add(beam,ring,cap);g.userData={ring,beam,cap};return g}
 function updateWalkGoalMarker(w,dt){const m=w&&w.goalMarker,o=activeWalkObjective(w);if(!m)return;if(!o){m.visible=false;return}m.visible=true;m.position.set(o.x,0,o.z);const d=Math.hypot(w.x-o.x,w.z-o.z),p=.88+.14*Math.sin(t*2.8);m.userData.ring.scale.setScalar(p);m.userData.cap.position.y=2.55+.16*Math.sin(t*3.2);m.userData.ring.material.opacity=d<2.8?.22:.96;m.userData.beam.material.opacity=d<5?.035:.16;m.userData.cap.material.opacity=d<2.8?.28:.96}
 function updQuest(){
@@ -1074,6 +1074,8 @@ function updQuest(){
   if(pPending&&!pDone){head='مهمة عاجلة · الصلاة';ar='اذهب إلى المسجد في الساحة وأدِّ الصلاة، ثم أكمل مشوار الأسرة من حيث توقفت.'}
   else if(w.fol){head='مهمة جانبية · '+(w.fol.label||'مرافقة شخص');ar='رافق الشخص حتى العلامة الذهبية. ابقَ قريبًا منه حتى تكتمل المساعدة.'}
   else if(w.q===0){head='الفصل '+chapter+' · مشاوير الأسرة ('+progress+' من ٤)';ar='البداية من المنزل: تحدّث مع أمك وخذ طلب الأسرة ومصروف الشراء.'}
+  else if(w.q===1&&w.err===2&&w.pharmacy&&!w.pharmacy.entered){head='الفصل '+chapter+' · دخول الصيدلية';ar='افتح باب صيدلية الشفاء، واعبر إلى الداخل. يوجد طابور على الدواء.'}
+  else if(w.q===1&&w.err===2&&w.pharmacy&&w.pharmacy.entered&&w.pharmacy.queueLeft>0){head='الصيدلية · انتظار الدور ('+w.pharmacy.queueLeft+' شخص)';ar=w.pharmacy.waiting?'قف على العلامة الصفراء بثبات. الوقت المتبقي: '+Math.max(0,Math.ceil(3-w.pharmacy.waitTime))+' ثوانٍ حتى تتحرك القائمة.':'قف عند العلامة الصفراء واضغط E للاصطفاف؛ لا تتجاوز الشخصين أمامك.'}
   else if(w.q===1){head='الفصل '+chapter+' · خطوة الشراء';ar='الوجهة: '+e.shopName+' عند '+e.ownerName+'. السعر '+e.cost+' جنيهًا. المبلغ معك: '+(w.errandBudget||0)+' جنيهًا. بعد الشراء أعد الباقي إلى أمك.'}
   else{head='الفصل '+chapter+' · إعادة الأمانة';ar='عد إلى أمك ومعك '+e.itemAr+'. السعر '+e.cost+' جنيهًا، والباقي الواجب إعادته '+(w.changeDue||0)+' جنيهًا.'}
   setH($m,'<b>'+head+'</b><span class="mission-copy">'+ar+'</span>')
@@ -1084,6 +1086,7 @@ function talkMom(){const w=WK,e=ERR[w.err];faceCharacter(w.items.find(it=>it.id=
   else if(w.q===2&&w.item)showDlg('أمك: «الحمد لله، أحضرتَ '+e.itemAr+'! ثمنه '+e.cost+' جنيهًا، والباقي '+(w.changeDue||0)+' جنيهًا. أعدتَ الباقي؟»','',[{t:'تفضّلي بالمشتريات والباقي · '+(w.changeDue||0)+' جنيهًا',fn:()=>{const change=w.changeDue||0;if(change>0)pay(-change);w.changeDue=0;w.item=false;syncHeldErrandItem(w);SV.errands=(SV.errands||0)+1;pay(40,'أحسنت! أعدتَ الباقي كاملًا. مكافأة إنجاز المشوار: ٤٠ جنيهًا.');recordFamilyErrand(e);w.err=(w.err+1)%ERR.length;w.q=0;w.errandBudget=0;w.changeDue=0;saveFamilyQuest(w);updQuest()}}]);
   else showDlg('أمك: «لا تتأخر، وصلِّ في وقتها يا بني»','',[{t:'إن شاء الله',fn:()=>{}}])}
 function talkShop(i){const w=WK,e=ERR[i],shopItem=w.items.find(it=>it.id===e.id),vendor=shopItem&&shopItem.npc;
+  if(e.id==='pharm'&&w.pharmacy&&(!w.pharmacy.entered||w.pharmacy.queueLeft>0)){setHumanEmotion(vendor,'neutral');return say(!w.pharmacy.entered?'افتح الباب وادخل إلى الصيدلية أولًا.':'الصيدلية مزدحمة؛ يجب أن تنتظر دورك خلف الشخصين قبل طلب الدواء.')}
   if(w.q!==1||w.err!==i||w.item){setHumanEmotion(vendor,'neutral');return say(w.item?'المشتريات معك بالفعل؛ عُد بها إلى أمك.':'هذا ليس المتجر المطلوب الآن. اتبع العلامة الذهبية إلى '+ERR[w.err].shopName+'.')}
   faceCharacter(vendor);
   const ask={baker:'أريد عيشًا طازجًا بخمسةٍ وعشرين جنيهًا، لو سمحت.',grocer:'أريد خضارًا طازجة بأربعين جنيهًا، من فضلك.',pharm:'أريد دواءً لأختي بخمسةٍ وأربعين جنيهًا، لو سمحت.',books:'أريد كراسةً لأختي بخمسة عشر جنيهًا، من فضلك.'}[e.id];
@@ -1095,6 +1098,75 @@ function talkShop(i){const w=WK,e=ERR[i],shopItem=w.items.find(it=>it.id===e.id)
 let walkShadowCellX=NaN,walkShadowCellZ=NaN;
 function syncWalkShadowAnchor(x,z,force=false){const gx=Math.floor(x/24),gz=Math.floor((z-WZ)/24);if(!force&&gx===walkShadowCellX&&gz===walkShadowCellZ)return;walkShadowCellX=gx;walkShadowCellZ=gz;const tx=gx*24,tz=WZ+gz*24;sunL.position.set(tx-34,36,tz-48);sunL.target.position.set(tx,0,tz);sunL.target.updateMatrixWorld();R.shadowMap.needsUpdate=true}
 function configureWalkVisuals(x,z){gnd.visible=false;R.outputEncoding=T.sRGBEncoding;R.toneMapping=T.ACESFilmicToneMapping;R.toneMappingExposure=.96;R.shadowMap.enabled=true;R.shadowMap.type=T.PCFSoftShadowMap;R.shadowMap.autoUpdate=false;S.fog.near=850;S.fog.far=1100;sunL.castShadow=true;gnd.receiveShadow=true;sunL.shadow.mapSize.set((navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512,(navigator.hardwareConcurrency||4)>=8&&innerWidth>800?1024:512);sunL.shadow.camera.left=-38;sunL.shadow.camera.right=38;sunL.shadow.camera.top=34;sunL.shadow.camera.bottom=-16;sunL.shadow.camera.near=.5;sunL.shadow.camera.far=240;sunL.shadow.camera.updateProjectionMatrix();syncWalkShadowAnchor(x,z,true)}
+function buildPharmacyInterior(PG,w,mk,it){
+ const cx=47,cz=Zl(-18),left=42,right=52;
+ const wall=L(0xd6d1c5),trim=L(0x826c50),floor=L(0xbeb7a8),inner=L(0xe9e2d3),shelf=L(0x8d7458),glass=L(0x9bc4cc,{transparent:true,opacity:.38}),counterMat=L(0x56716a);
+ const box=(parent,mat,x,y,z,sx,sy,sz)=>{const m=new T.Mesh(new T.BoxGeometry(sx,sy,sz),mat);m.position.set(x,y,z);parent.add(m);return m};
+ const floorM=new T.Mesh(new T.PlaneGeometry(10,8).rotateX(-Math.PI/2),floor);floorM.position.set(cx,.075,cz);PG.add(floorM);
+ box(PG,wall,right+.12,1.9,cz,.24,3.8,8.25);
+ box(PG,wall,cx,1.9,cz-4.12,10.25,3.8,.24);box(PG,wall,cx,1.9,cz+4.12,10.25,3.8,.24);
+ box(PG,wall,left+.12,1.9,cz-2.6,.24,3.8,2.8);box(PG,wall,left+.12,1.9,cz+2.6,.24,3.8,2.8);
+ box(PG,trim,left+.03,1.85,cz-1.18,.3,3.7,.16);box(PG,trim,left+.03,1.85,cz+1.18,.3,3.7,.16);
+ box(PG,trim,left+.03,3.66,cz,.32,.28,2.5);box(PG,trim,cx,3.72,cz,10,.12,8.18);
+ [-1,1].forEach(side=>{box(PG,shelf,46.2,1.35,cz+side*3.28,4.9,2.25,.32);
+  for(let row=0;row<3;row++){box(PG,trim,46.2,.62+row*.68,cz+side*3.08,4.85,.055,.10);
+   for(let k=0;k<7;k++){const x=44.1+k*.67,y=.83+row*.68,col=[0xdce7e1,0xf1d8ac,0x9dc8d4,0xe7b9ae,0xc5d9ab][(k+row*2+(side>0?1:0))%5];box(PG,L(col),x,y,cz+side*3.02,.32,.34,.18)}
+  }box(PG,glass,46.3,2.65,cz+side*3.12,4.6,.12,.12)});
+ box(PG,counterMat,49.65,.63,cz,1.05,1.18,4.35);box(PG,inner,49.65,1.25,cz,1.12,.12,4.42);
+ box(PG,trim,49.45,1.36,cz-.75,.24,.16,.24);box(PG,L(0x3c494b),49.35,1.5,cz-.78,.34,.12,.30);
+ const doorRoot=new T.Group();doorRoot.position.set(left+.02,0,cz-1.1);
+ box(doorRoot,L(0x79533a),0,1.2,1.1,.13,2.4,2.2);box(doorRoot,trim,.075,1.2,1.1,.035,2.32,2.12);
+ const handle=new T.Mesh(new T.SphereGeometry(.055,8,6),L(0xe1c17f));handle.position.set(.11,1.15,1.84);doorRoot.add(handle);S.add(doorRoot);
+ const labelTex=cv(512,120,q=>{q.fillStyle='#235d5a';q.fillRect(0,0,512,120);q.strokeStyle='#e6c57f';q.lineWidth=7;q.strokeRect(5,5,502,110);q.direction='rtl';q.lang='ar';q.textAlign='center';q.textBaseline='middle';q.fillStyle='#fff8e8';q.font='bold 42px Cairo, Tahoma, Arial, sans-serif';q.fillText('صيدلية الشفاء',256,48,470);q.fillStyle='#f1d59b';q.font='bold 23px Cairo, Tahoma, Arial, sans-serif';q.fillText('الأدوية · اسأل الصيدلانية',256,88,470)});
+ labelTex.encoding=T.sRGBEncoding;labelTex.needsUpdate=true;const sign=new T.Mesh(new T.PlaneGeometry(3.1,.73),new T.MeshBasicMaterial({map:labelTex,side:T.DoubleSide}));sign.position.set(left-.04,3.25,cz);sign.rotation.y=-Math.PI/2;PG.add(sign);
+ const walls=[
+  {x0:left-.25,x1:left+.23,z0:cz-4.15,z1:cz-1.22},{x0:left-.25,x1:left+.23,z0:cz+1.22,z1:cz+4.15},
+  {x0:right-.05,x1:right+.3,z0:cz-4.15,z1:cz+4.15},{x0:left-.1,x1:right+.1,z0:cz-4.17,z1:cz-3.78},
+  {x0:left-.1,x1:right+.1,z0:cz+3.78,z1:cz+4.17},{x0:49.02,x1:50.3,z0:cz-2.33,z1:cz+2.33}
+ ];
+ w.rects.push(...walls);const doorCollider={x0:left-.28,x1:left+.2,z0:cz-1.1,z1:cz+1.1};w.rects.push(doorCollider);
+ const pharmacist=mk('medic',51.05,-18,-Math.PI/2),firstCustomer=mk('owner',46.65,-18,Math.PI/2),secondCustomer=mk('kid',45.05,-18,Math.PI/2);
+ [firstCustomer,secondCustomer].forEach((n,i)=>{if(n){n.userData.mode='stand';n.userData.queueIndex=i;setHumanEmotion(n,'neutral')}});
+ const waitRing=new T.Mesh(new T.TorusGeometry(.58,.045,6,24),new T.MeshBasicMaterial({color:0xf3cb70,transparent:true,opacity:.94,depthWrite:false}));waitRing.rotation.x=Math.PI/2;waitRing.position.set(43.45,.105,cz);S.add(waitRing);
+ w.pharmacy={cx,cz,left,right,open:false,entered:false,doorRoot,doorCollider,walls,queueLeft:2,customers:[firstCustomer,secondCustomer],waiting:false,waitTime:0,waitX:43.45,waitZ:cz,queueReady:false,waitRing,lastCountdown:-1};
+ it('pharmDoor',40.15,-18,'افتح باب الصيدلية',togglePharmacyDoor,{r:2.7,pharmacyDoor:true});
+ it('pharmQueue',43.45,-18,'انتظر دورك في الطابور',joinPharmacyQueue,{r:1.9,pharmacyQueue:true});
+ it('pharm',48.35,-18,'تحدث مع الصيدلانية',()=>talkShop(2),{npc:pharmacist,r:2.6,pharmacyCounter:true});
+}
+function togglePharmacyDoor(){
+ const w=WK,p=w&&w.pharmacy;if(!p)return;
+ if(p.open){say('باب الصيدلية مفتوح. اعبر إلى الداخل للوصول إلى قسم الدواء.');return}
+ p.open=true;p.doorRoot.rotation.y=Math.PI/2;const i=w.rects.indexOf(p.doorCollider);if(i>=0)w.rects.splice(i,1);
+ bell();say('فتحتَ باب الصيدلية. ادخل، لكن يوجد طابور أمامك.');updQuest()
+}
+function joinPharmacyQueue(){
+ const w=WK,p=w&&w.pharmacy;if(!p)return;
+ if(w.q!==1||w.err!==2)return say('يمكنك زيارة الصيدلية، لكن لا تحتاج إلى الدواء في هذه المهمة الآن.');
+ if(!p.entered||!p.open)return say('افتح الباب أولًا وادخل إلى الصيدلية.');
+ if(p.queueLeft<=0)return say('انتهى الطابور. يمكنك الآن التحدث مع الصيدلانية.');
+ if(p.waiting)return say('أنت في الطابور بالفعل. قف على العلامة الصفراء وانتظر دورك.');
+ showDlg('الصيدلية مزدحمة. هناك شخصان قبلك؛ لا تتجاوز الدور. قف على العلامة الصفراء وانتظر حتى تُخدم الحالات التي أمامك.','',[
+  {t:'أقف في آخر الطابور وأنتظر دوري',fn:()=>{p.waiting=true;p.waitTime=0;p.lastCountdown=-1;say('وقفتَ في آخر الطابور. ابقَ على العلامة الصفراء حتى يأتي دورك.');updQuest()}},
+  {t:'أعود لاحقًا',fn:()=>say('يمكنك العودة حين تكون مستعدًا للانتظار.')}
+ ])
+}
+function updatePharmacy(w,dt){
+ const p=w&&w.pharmacy;if(!p)return;
+ const inRoom=p.open&&w.x>42.55&&w.x<51.65&&Math.abs(w.z-p.cz)<3.45;
+ if(inRoom!==p.entered){p.entered=inRoom;if(inRoom)say('دخلتَ الصيدلية. انتظر دورك قبل طلب الدواء.');else if(p.waiting)say('خرجتَ من الصيدلية؛ سيظل الطابور محفوظًا، لكن الانتظار يتوقف حتى تعود.');updQuest()}
+ for(const n of p.customers){const u=n&&n.userData;if(!u||!u.queueTarget)continue;const q=u.queueTarget,dx=q.x-n.position.x,dz=q.z-n.position.z,d=Math.hypot(dx,dz);if(d<.08){n.position.x=q.x;n.position.z=q.z;delete u.queueTarget;u.mode='stand'}else{const step=Math.min(d,1.25*dt);n.position.x+=dx/d*step;n.position.z+=dz/d*step;turnYaw(n,Math.atan2(dx,dz),dt);walkBodyPose(u.bones,walkOff(t*4,.12))}}
+ if(!p.waiting||p.queueLeft<=0)return;
+ const d=Math.hypot(w.x-p.waitX,w.z-p.waitZ),atSpot=p.entered&&d<.8&&Math.abs(w.spd)<.48&&!menuOpen&&!w.pray;
+ if(atSpot){p.waitTime+=dt;const countdown=Math.max(0,Math.ceil(3-p.waitTime));if(countdown!==p.lastCountdown){p.lastCountdown=countdown;updQuest()}
+  if(p.waitTime>=3.0){p.waitTime=0;p.lastCountdown=-1;const served=p.customers.shift();p.queueLeft=p.customers.length;
+   if(served){const u=served.userData;u.mode='exit';u.exitIndex=0;u.exitPath=[{x:served.position.x,z:p.cz+.7},{x:42.35,z:p.cz+.7},{x:40.35,z:p.cz+.7}]}
+   if(p.customers[0])p.customers[0].userData.queueTarget={x:46.65,z:p.cz};
+   if(p.queueLeft<=0){p.waiting=false;p.queueReady=true;say('انتهى الانتظار. حان دورك الآن؛ اقترب من الكونتر وتحدث مع الصيدلانية.')}
+   else say('خُدمت حالة أمامك. تقدم الطابور؛ ابقَ على العلامة الصفراء لثلاث ثوانٍ أخرى.');
+   updQuest()
+  }
+ }else{p.waitTime=Math.max(0,p.waitTime-dt*.5);const countdown=Math.max(0,Math.ceil(3-p.waitTime));if(countdown!==p.lastCountdown){p.lastCountdown=countdown;updQuest()}}
+}
 function startWalkMode(){started=true;walkMode=true;document.body.classList.add('walk-mode');configureWalkVisuals(-70.2,Zl(-50));$('bk').style.display='block';$('goals').style.display='block';$('ov').style.display='none';initAudio();mg.gain.value=muted?0:.5;AC.resume();
  chunks.forEach(g=>{S.remove(g);g.userData.d.forEach(d=>d.dispose())});chunks.clear();mosqueList.length=0;tlights.length=0;rider.visible=false;if(mBeam)mBeam.visible=false;$('spd').style.display='none';
  const W=buildAlley(),FQ=restoreFamilyQuest();WK={world:W,rects:W.rects,x:-70.2,z:Zl(-50),yaw:Math.PI/2,spd:0,ph:0,pp:{lf:0,rf:0,al:0,ar:0,lean:0,twist:0,roll:0},q:FQ.q,err:FQ.err,item:FQ.item,errandBudget:FQ.errandBudget,changeDue:FQ.changeDue,heldProps:null,jumpY:0,jumpV:0,onGround:true,fol:null,pray:null,pe:false,items:[],npcs:[],ev:{},cam:new T.Vector3(),dlg:null,mapT:0};
@@ -1184,7 +1256,7 @@ function drawWalkMap(w){
  const legend=(x,col,label)=>{c.fillStyle=col;c.beginPath();c.arc(x,172,3,0,Math.PI*2);c.fill();c.fillStyle='#fff4dc';c.font='10px Cairo, Tahoma, Arial, sans-serif';c.textAlign='left';c.fillText(label,x+6,175)};
  legend(12,'#fff0ad','أنت');legend(67,'#ffe28a','الهدف');legend(119,'#68d8c0','المشاة');c.restore()
 }
-function walkActionLabel(it){if(!it)return'';const shop=ERR.find(e=>e.id===it.id);if(shop)return'تحدّث مع '+shop.ownerName+' في '+shop.shopName;const labels={mom:'تكلّم مع أمك',ow:'ساعد السيدة المسنّة',lost:'رافق الطفل إلى الساحة',change:'اشترِ التمر أو أعد المال الزائد',dare:'تحدّث مع صديقك عن الأمانة',cat:'أطعم القطة',argue:'ساعد الجارين على التصالح',mosque:'اذهب إلى المسجد'};if(it.id==='mosque')return(pPending&&!pDone)?'ادخل المسجد للصلاة':'زر المسجد';return labels[it.id]||'تفاعل'}
+function walkActionLabel(it){if(!it)return'';if(it.id==='pharmDoor')return WK&&WK.pharmacy&&WK.pharmacy.open?'الباب مفتوح؛ اعبر إلى داخل الصيدلية':'افتح باب الصيدلية';if(it.id==='pharmQueue')return WK&&WK.pharmacy&&WK.pharmacy.waiting?'انتظر دورك عند العلامة الصفراء':'اصطف وانتظر دورك';const shop=ERR.find(e=>e.id===it.id);if(shop)return'تحدّث مع '+shop.ownerName+' في '+shop.shopName;const labels={mom:'تكلّم مع أمك',ow:'ساعد السيدة المسنّة',lost:'رافق الطفل إلى الساحة',change:'اشترِ التمر أو أعد المال الزائد',dare:'تحدّث مع صديقك عن الأمانة',cat:'أطعم القطة',argue:'ساعد الجارين على التصالح',mosque:'اذهب إلى المسجد'};if(it.id==='mosque')return(pPending&&!pDone)?'ادخل المسجد للصلاة':'زر المسجد';return labels[it.id]||'تفاعل'}
 function walkLoop(dt){const w=WK;w.fc=(w.fc||0)+1;
  gmin+=dt*(window.__ts||.4);const h=hourNow();skyHour(h);{const dN=Math.floor(gmin/1440);if(dN!==lastDay){lastDay=dN;dayN=dN;buildPRY()}}
  let kk=-1;for(let i=0;i<PRY.length;i++)if(h>=PRY[i].h&&h<PRY[i].e)kk=i;
@@ -1202,13 +1274,14 @@ function walkLoop(dt){const w=WK;w.fc=(w.fc||0)+1;
  if(!w.onGround){w.jumpV-=13*dt;w.jumpY=Math.max(0,w.jumpY+w.jumpV*dt);if(w.jumpY===0){w.jumpV=0;w.onGround=true}}w.boy.position.set(w.x,WALK_Y+w.jumpY,w.z);w.boy.rotation.y=w.yaw;syncWalkShadowAnchor(w.x,w.z);updateWalkGoalMarker(w,dt);w.stepT=(w.stepT||0)-dt;if(Math.abs(w.spd)>.7&&w.onGround&&!lock&&w.stepT<=0){footstepSound(Math.abs(w.spd)>4.5);w.stepT=Math.abs(w.spd)>4.5?.24:.38}
  for(const n of w.npcs)npcUpdate(n,dt);updateTrafficBikes(w.world.bikes,dt);
  {const cu=w.cat.userData;cu.mixer.update(dt);cu.eatAmt+=(cu.eatTarget-cu.eatAmt)*(1-Math.exp(-6*dt));if(cu.eatAmt>.01){const a=-(1.0+Math.sin(t*5)*.14)*cu.eatAmt/2;cu.neck.forEach(b=>b.quaternion.multiply(_qn.setFromAxisAngle(_ex,a)))}}
+ updatePharmacy(w,dt);
  if(w.fol){const f=w.fol,n=f.npc,u=n.userData;u.mode='follow';const tx=w.x-fx*1.1-fz*.45,tz=w.z-fz*1.1+fx*.45,dx=tx-n.position.x,dz=tz-n.position.z,d=Math.hypot(dx,dz);
   if(d>.4){const sp=Math.min(2.0,.5+d*.8);n.position.x+=dx/d*sp*dt;n.position.z+=dz/d*sp*dt;turnYaw(n,Math.atan2(dx,dz),dt);u.ph+=dt*sp*4.8;walkBodyPose(u.bones,walkOff(u.ph,.26))}else walkBodyPose(u.bones,{});
   if(Math.hypot(w.x-f.dest.x,w.z-f.dest.z)<2.4&&Math.hypot(n.position.x-f.dest.x,n.position.z-f.dest.z)<4.5)f.done()}
  if(w.pray){const p=w.pray;p.t+=dt;const P=PRY[p.k],dur=P.r*2.4,f=clamp(p.t/dur,0,1);
   if(P.j&&f<.4){setH($('prT'),'خطبة الجمعة');setH($('prR'),'استماعٌ وإنصات')}else{setH($('prT'),(P.t?'':'الصلاة · ')+P.n);const f2=P.j?(f-.4)/.6:f;setH($('prR'),'الركعة '+Math.min(P.r,1+Math.floor(Math.max(0,f2)*P.r))+' / '+P.r)}$('prB').style.width=(f*100)+'%';
   if(p.t>=dur){w.pray=null;w.boy.visible=true;$('pray').style.display='none';pDone=true;updQuest();const rw=P.j?150:P.t?120:100;SV.prayers++;pay(rw,'تقبّل الله منا ومنك   \u2066+¥'+rw+'\u2069')}}
- let near=null,nd=1e9;for(const it of w.items){if(w.fol&&w.fol.npc===(it.ev&&it.ev.npc))continue;if(w.item&&it.id!=='mom'&&ERR.some(e=>e.id===it.id))continue;const d=Math.hypot(w.x-it.x,w.z-it.z);if(d<it.r&&d<nd){near=it;nd=d}}
+ let near=null,nd=1e9;for(const it of w.items){if(w.fol&&w.fol.npc===(it.ev&&it.ev.npc))continue;if(it.id==='pharmDoor'&&w.pharmacy&&w.pharmacy.entered)continue;if(it.id==='pharmQueue'&&w.pharmacy&&w.pharmacy.queueLeft<=0)continue;if(it.id==='pharm'&&w.err===2&&w.q===1&&w.pharmacy&&w.pharmacy.queueLeft>0)continue;if(w.item&&it.id!=='mom'&&ERR.some(e=>e.id===it.id))continue;const d=Math.hypot(w.x-it.x,w.z-it.z);if(d<it.r&&d<nd){near=it;nd=d}}
  let gn=null;if(!near)for(const n of w.npcs){const u=n.userData;if(u.mode==='sit'||u.mode==='argue'||u.mode==='follow')continue;const d=Math.hypot(w.x-n.position.x,w.z-n.position.z);if(d<1.7&&d<nd){gn=n;nd=d}}
  const eNow=K.KeyE||actHeld,eE=eNow&&!w.pe;w.pe=!!eNow;
  if(!lock){if(w.fol){$a.style.display='block';$a.textContent='أكمل مرافقة الشخص إلى العلامة الذهبية'}else if(near){$a.style.display='block';$a.textContent='اضغط E: '+walkActionLabel(near);if(eE){const target=near.npc||(near.ev&&near.ev.npc)||(near.ev&&near.ev.npcs&&near.ev.npcs[0]);faceCharacter(target);near.fn(near)}}else if(gn){$a.style.display='block';$a.textContent='اضغط E لإلقاء السلام';if(eE)greet(gn)}else $a.style.display='none'}
