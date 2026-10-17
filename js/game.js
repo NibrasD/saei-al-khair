@@ -1190,7 +1190,8 @@ function startWalkMode(){started=true;walkMode=true;document.body.classList.add(
  w.rects.push({x0:homeX-.34,x1:homeX+.22,z0:homeZ-1.08,z1:homeZ+1.08});
  w.rects.push({x0:homeX+.15,x1:homeX+6.35,z0:homeZ-4.25,z1:homeZ+4.25});
  const mom=mk('owner',-67.6,-50,-Math.PI/2);it('mom',-67.6,-50,'Talk to Mom',talkMom,{npc:mom});
- ERR.forEach((e,i)=>{const st=stallProp(e.col,[0xc99a5b,0xd8b073,0x6bbf59,0xd94b3d],e.shopName+'|'+e.ownerName);st.position.set(e.sx,0,Zl(e.zl));st.rotation.y=e.rot;PG.add(st);w.rects.push({x0:e.sx-1.0,x1:e.sx+1.0,z0:Zl(e.zl)-1.6,z1:Zl(e.zl)+1.6});const v=mk(e.kind,e.vx,e.zl,-e.rot);it(e.id,e.ix,e.zl,'Talk to the '+e.ar,()=>talkShop(i),{npc:v})});
+ ERR.forEach((e,i)=>{if(e.id==='pharm')return;const st=stallProp(e.col,[0xc99a5b,0xd8b073,0x6bbf59,0xd94b3d],e.shopName+'|'+e.ownerName);st.position.set(e.sx,0,Zl(e.zl));st.rotation.y=e.rot;PG.add(st);w.rects.push({x0:e.sx-1.0,x1:e.sx+1.0,z0:Zl(e.zl)-1.6,z1:Zl(e.zl)+1.6});const v=mk(e.kind,e.vx,e.zl,-e.rot);it(e.id,e.ix,e.zl,'تحدث مع '+e.ownerName+' في '+e.shopName,()=>talkShop(i),{npc:v})});
+ buildPharmacyInterior(PG,w,mk,it);
  const groundBags=[],ow=mk('owner',-31.2,-10,-Math.PI/2),dd=doorProp();dd.position.set(-30.1,0,Zl(-58));dd.rotation.y=Math.PI/2;PG.add(dd);[[-.6,.6],[-.4,-.3]].forEach((o,k)=>{const b=new T.Mesh(new T.BoxGeometry(.4,.5,.3),bagM[k]);b.position.set(-31.2+o[0],.25,Zl(-10)+o[1]);PG.add(b);groundBags.push(b)});
  const elderEv=sideQuestState('elderEscort',{npc:ow,dest:{x:-31.4,z:Zl(-58)},done:false,groundBags});elderEv.groundBags=groundBags;if(elderEv.done)groundBags.forEach(b=>b.visible=false);it('ow',-31.2,-10,'ساعد السيدة المسنّة واحمل أكياسها',evOldWoman,{ev:elderEv});
  const lc=mk('kid',31.2,-52,Math.PI/2),lm=mk('medic',W.sx,4.8,0);it('lost',31.2,-52,'Talk to the crying boy',evLost,{ev:sideQuestState('lostChild',{npc:lc,dest:{x:W.sx,z:Zl(4.8)},done:false})});
