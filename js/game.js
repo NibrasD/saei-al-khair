@@ -810,7 +810,7 @@ function buildAlley(){const g=new T.Group(),rects=[],storefronts=[],rnd=mkRng(42
   [[xm,z0],[xm,z1]].forEach(q=>{const p=new T.Mesh(new T.CylinderGeometry(.06,.08,4.2,6),lampPostM);p.position.set(q[0],2.1,q[1]);g.add(p);const b=new T.Mesh(new T.SphereGeometry(.22,8,6),bulbM);b.position.set(q[0],4.3,q[1]);g.add(b)});
   [[x0,zm],[x1,zm]].forEach(q=>{const p=new T.Mesh(new T.CylinderGeometry(.06,.08,4.2,6),lampPostM);p.position.set(q[0],2.1,q[1]);g.add(p);const b=new T.Mesh(new T.SphereGeometry(.22,8,6),bulbM);b.position.set(q[0],4.3,q[1]);g.add(b)});
   if(i===1&&j===2)continue;
-  if((i+j)%2===0){[[x0,xm-2,-1],[xm+2,x1,1]].forEach(hf=>{for(let k=0;k<3;k++){const cz=z0+4+8*k;mkB((hf[0]+hf[1])/2,cz,10,8);if(rnd()<.45)shop(hf[2]<0?x0:x1,cz,hf[2],0)}});
+  if((i+j)%2===0){[[x0,xm-2,-1],[xm+2,x1,1]].forEach(hf=>{for(let k=0;k<3;k++){const cz=z0+4+8*k,isPharmacyPlot=i===3&&j===1&&Math.abs(cz-Zl(-18))<.5;if(isPharmacyPlot){rnd();rnd()}else mkB((hf[0]+hf[1])/2,cz,10,8);const shopHere=rnd()<.45;if(shopHere&&!isPharmacyPlot)shop(hf[2]<0?x0:x1,cz,hf[2],0)}});
    for(let n=0;n<2;n++){const zz=z0+5+rnd()*14,ln=new T.Mesh(new T.BoxGeometry(4,.03,.03),L(0x444444));ln.position.set(xm,6.2,zz);g.add(ln);for(let k=0;k<3;k++){const cl=new T.Mesh(new T.PlaneGeometry(.55,.75),L([0xe74c3c,0x3498db,0xf1c40f,0x2ecc71][(rnd()*4)|0],{side:T.DoubleSide}));cl.position.set(xm-1.2+k*1.2,5.8,zz);g.add(cl)}}}
   else{[[z0,zm-2,-1],[zm+2,z1,1]].forEach(hf=>{for(let k=0;k<3;k++){const cx0=x0+4+8*k;mkB(cx0,(hf[0]+hf[1])/2,8,10);if(rnd()<.45)shop(cx0,hf[2]<0?z0:z1,0,hf[2])}});
    for(let n=0;n<2;n++){const xx=x0+5+rnd()*14,ln=new T.Mesh(new T.BoxGeometry(.03,.03,4),L(0x444444));ln.position.set(xx,6.2,zm);g.add(ln);for(let k=0;k<3;k++){const cl=new T.Mesh(new T.PlaneGeometry(.55,.75),L([0xe74c3c,0x3498db,0xf1c40f,0x2ecc71][(rnd()*4)|0],{side:T.DoubleSide}));cl.position.set(xx,5.8,zm-1.2+k*1.2);cl.rotation.y=Math.PI/2;g.add(cl)}}}}
@@ -841,6 +841,20 @@ function npcGroundShadow(scale=1){if(!npcShadowTex){npcShadowTex=cv(128,128,q=>{
  const sh=new T.Mesh(npcShadowGeo,npcShadowMat);sh.position.y=.035;sh.scale.set(scale,scale,1);sh.renderOrder=2;return sh}
 function addFullHijab(m,kind){const head=m.getObjectByName('head');if(!head||head.userData.fullHijab)return;const cloth=L(kind==='medic'?0x263746:0x252a34);cloth.side=T.DoubleSide;cloth.roughness=1;cloth.metalness=0;disableTownTerrainWarp(cloth);const hood=new T.Mesh(new T.SphereGeometry(.19,22,16,2.11,Math.PI*2-1.08,.025,Math.PI-.05),cloth);hood.position.set(0,.15,0);hood.scale.set(1.07,1.18,1.04);hood.frustumCulled=false;const drape=new T.Mesh(new T.ConeGeometry(.19,.39,20,1,true),cloth);drape.position.set(0,-.13,0);drape.scale.set(1.12,1,.88);drape.frustumCulled=false;head.add(hood,drape);head.userData.fullHijab=true}
 function walkBodyPose(b,o){setB(b['leg-left'],qX(-(o.lf||0)));setB(b['leg-right'],qX(-(o.rf||0)));const al=(o.al||0)*.52,ar=(o.ar||0)*.52;setB(b['arm-left'],qZ(al).multiply(qX(al*.22)));setB(b['arm-right'],qZ(ar).multiply(qX(ar*.22)));setB(b.torso,qX(o.lean||0).multiply(qY(o.twist||0)).multiply(qZ(o.roll||0)))}
+function setElderCarryBags(npc,visible){
+ if(!npc||!npc.userData)return;const u=npc.userData;
+ if(!u.carryBags){
+  u.carryBags=[];
+  const makeBag=(cloth,produce)=>{const g=new T.Group(),body=new T.Mesh(new T.BoxGeometry(.235,.255,.155),friendlyMat(cloth));body.position.set(0,-.16,0);g.add(body);
+   const rim=new T.Mesh(new T.BoxGeometry(.245,.025,.165),friendlyMat(cloth));rim.position.set(0,-.035,0);g.add(rim);
+   const handle=new T.Mesh(new T.TorusGeometry(.057,.009,6,14),friendlyMat(0x7b6044));handle.position.set(0,.008,.01);g.add(handle);
+   const veg=new T.Mesh(new T.SphereGeometry(.055,9,7),friendlyMat(produce));veg.position.set(.035,-.012,.018);veg.scale.set(1,1.2,.8);g.add(veg);
+   const leaf=new T.Mesh(new T.ConeGeometry(.035,.09,6),friendlyMat(0x3f814b));leaf.position.set(-.035,.015,-.018);leaf.rotation.z=.25;g.add(leaf);g.visible=false;return g};
+  const arms=[u.bones&&u.bones['arm-left'],u.bones&&u.bones['arm-right']];
+  arms.forEach((arm,i)=>{if(!arm)return;const bag=makeBag(i?0xa86b3f:0x547d54,i?0xe0b44e:0x77a64c);bag.position.set(0,-.41,.025);bag.rotation.z=i?-.04:.04;arm.add(bag);u.carryBags.push(bag)})
+ }
+ u.carryBags.forEach(b=>b.visible=!!visible)
+}
 function setHumanEmotion(target,emotion){
  if(!target)return;const head=target.getObjectByName?target.getObjectByName('head'):null,face=head&&head.userData.face;if(!face)return;
  const name=emotion==='sad'?'sad':emotion==='neutral'?'neutral':emotion==='laugh'?'laugh':'happy';if(face.emotion===name)return;face.emotion=name;
@@ -985,7 +999,7 @@ function blocked(x,z,r){r=r||.35;if(Math.abs(x)>77||z<WZ-77||z>WZ+77)return true
   return currentBlocked&&walkCollisionDepth(nx,nz,r)+npcCollisionDepth(nx,nz,r)<walkCollisionDepth(x,z,r)+npcCollisionDepth(x,z,r)-.0001
  }
 function nextNode(u){const nb=[],i=u.node[0],j=u.node[1],rand=u.rng||Math.random;[[1,0],[-1,0],[0,1],[0,-1]].forEach(d=>{const a=i+d[0],b=j+d[1];if(a>=0&&a<5&&b>=0&&b<5&&!(u.prev&&u.prev[0]===a&&u.prev[1]===b))nb.push([a,b])});const nx=nb.length?nb[(rand()*nb.length)|0]:u.prev;u.prev=u.node;u.node=nx;u.tx=LN[nx[0]]+u.off;u.tz=NZ[nx[1]]+u.off}
-function npcUpdate(n,dt){const u=n.userData;{const fd=Math.hypot(n.position.x-WK.x,n.position.z-WK.z);const far=fd>58;if(far!==!n.visible){n.visible=!far}if(far&&u.mode!=='walk')return}u.waveAmt+=(u.waveTarget-u.waveAmt)*(1-Math.exp(-7*dt));if(u.waveT>0){u.waveT-=dt;if(u.waveT<=0)u.waveTarget=0}let posed=false;
+function npcUpdate(n,dt){const u=n.userData;if(u.gone){n.visible=false;return}{const fd=Math.hypot(n.position.x-WK.x,n.position.z-WK.z);const far=fd>58;if(far!==!n.visible){n.visible=!far}if(far&&u.mode!=='walk')return}u.waveAmt+=(u.waveTarget-u.waveAmt)*(1-Math.exp(-7*dt));if(u.waveT>0){u.waveT-=dt;if(u.waveT<=0)u.waveTarget=0}let posed=false;
  if(u.mode==='walk'){const dx=u.tx-n.position.x,dz=u.tz-n.position.z,d=Math.hypot(dx,dz);
   if(d<.3){const rand=u.rng||Math.random;if(rand()<.3){u.mode='wait';u.wt=1+rand()*3}else nextNode(u)}
   else{let vx=dx/d*u.sp,vz=dz/d*u.sp;const P=WK,ed=Math.hypot(n.position.x-P.x,n.position.z-P.z);if(ed<1.15){vx=0;vz=0}else if(ed<1.9){vx*=.35;vz*=.35}n.position.x+=vx*dt;n.position.z+=vz*dt;const sp=Math.hypot(vx,vz);if(sp>.05)turnYaw(n,Math.atan2(vx,vz),dt);u.ph+=dt*sp*4.8;walkBodyPose(u.bones,walkOff(u.ph,.2+.1*Math.min(sp,1.6)))}posed=true}
@@ -995,6 +1009,7 @@ function npcUpdate(n,dt){const u=n.userData;{const fd=Math.hypot(n.position.x-WK
  else if(u.mode==='talk'){walkBodyPose(u.bones,{ar:.45+.35*Math.sin(t*2.1+u.ph),al:.2+.2*Math.sin(t*1.7+u.ph*1.3),lean:.03,twist:.07*Math.sin(t*.9+u.ph)});setHumanEmotion(n,Math.sin(t*1.7+u.ph)>.72?'laugh':'happy');posed=true}
  else if(u.mode==='argue'){walkBodyPose(u.bones,{ar:.9+.5*Math.sin(t*5+u.ph),al:.7+.5*Math.sin(t*4.2+u.ph),lean:.1,twist:.1*Math.sin(t*3+u.ph)});setHumanEmotion(n,'sad');posed=true}
  else if(u.mode==='run'){if(Math.hypot(WK.x-n.position.x,WK.z-n.position.z)<1.7){walkBodyPose(u.bones,{});posed=true}else{u.a+=dt*u.w;const sx=WK.world.sx,sz=WK.world.sz;n.position.set(sx+Math.cos(u.a)*u.r,WALK_Y,sz+Math.sin(u.a)*u.r);n.rotation.y=Math.atan2(-Math.sin(u.a),Math.cos(u.a))*(u.w>0?1:-1);u.ph+=dt*11;walkBodyPose(u.bones,walkOff(u.ph,.5));posed=true}}
+ else if(u.mode==='exit'){const path=u.exitPath||[],target=path[u.exitIndex||0];if(!target){u.gone=true;n.visible=false}else{const dx=target.x-n.position.x,dz=target.z-n.position.z,d=Math.hypot(dx,dz);if(d<.16){if((u.exitIndex||0)<path.length-1)u.exitIndex=(u.exitIndex||0)+1;else{u.gone=true;n.visible=false}}else{const sp=Math.min(1.8,d*1.25),vx=dx/d*sp,vz=dz/d*sp;n.position.x+=vx*dt;n.position.z+=vz*dt;turnYaw(n,Math.atan2(vx,vz),dt);u.ph+=dt*sp*4;walkBodyPose(u.bones,walkOff(u.ph,.24))}}posed=true}
  if(u.waveAmt>.01){if(!posed)walkBodyPose(u.bones,{});u.waveBone.quaternion.multiply(qZ((1.45+Math.sin(t*8)*.16)*u.waveAmt))}}
 function showDlg(ar,en,ch){
   menuOpen=true;menuMode='dlg';WK.dlg=ch;$t.style.opacity=0;dialogCue();speakArabicDialogue(ar);
@@ -1011,12 +1026,12 @@ function faceCharacter(n){if(!WK||!n)return;WK.yaw=Math.atan2(n.position.x-WK.x,
 function greet(n){const u=n.userData,first=!u.salamGiven;faceCharacter(n);u.waveTarget=1;u.waveT=2.4;setHumanEmotion(n,'happy');setHumanEmotion(WK&&WK.boy,'happy');greetingCue();const reply=first?['وعليكم السلام ورحمة الله وبركاته','وعليكم السلام يا بني','أهلًا بك يا ولدي'][(Math.random()*3)|0]:'وعليكم السلام يا بني، حيّاك الله مرة أخرى.';speakArabicDialogue('أنت: السلام عليكم ورحمة الله وبركاته\nالشخص: '+reply);if(first){u.salamGiven=true;SV.salams=(SV.salams||0)+1;svSave();say('السلام عليكم ورحمة الله وبركاته — '+reply)}else say(reply)}
 function escort(npc,dest,ev,msg,reward){
   const w=WK;w.fol={npc,dest,label:npc.userData.kind==='kid'?'أوصل الطفل إلى الساحة':'أوصل السيدة إلى منزلها',done(){
-   w.fol=null;ev.done=true;saveSideQuest(ev);const u=npc.userData;u.mode='stand';u.waveTarget=1;u.waveT=5;setHumanEmotion(npc,'happy');setHumanEmotion(WK.boy,'happy');
+   w.fol=null;ev.done=true;saveSideQuest(ev);setElderCarryBags(npc,false);const u=npc.userData;u.mode='stand';u.waveTarget=1;u.waveT=5;setHumanEmotion(npc,'happy');setHumanEmotion(WK.boy,'happy');
    pay(reward,msg+'   +¥'+reward);SV.helped=(SV.helped||0)+1;svSave();updQuest()
   }};updQuest()
 }
 function evOldWoman(it){const ev=it.ev;if(ev.done)return say('تلوّح لك شاكرةً: «جزاك الله خيرًا يا بني»');if(WK.fol)return;
- showDlg('عجوز: «يا بني، الأكياس ثقيلة عليّ… هل تساعدني في الوصول إلى منزلي؟»','',[{t:'نعم يا خالتي، سأوصلك',fn:()=>{escort(ev.npc,ev.dest,ev,'جزاك الله خيرًا يا بني',60)}},{t:'آسف، أنا مستعجل',fn:()=>say('تبدو متعبة. يمكنك مساعدتها في وقت آخر.')}])}
+ showDlg('السيدة المسنّة: «اشتريتُ حاجات البيت، لكن الأكياس ثقيلة. هل تحملها لي حتى المنزل؟»','',[{t:'بكل سرور، سأحمل الأكياس وأرافقك',fn:()=>{setElderCarryBags(ev.npc,true);(ev.groundBags||[]).forEach(b=>b.visible=false);escort(ev.npc,ev.dest,ev,'وصلتَ الأكياس إلى منزل السيدة بأمان. جزاك الله خيرًا.',60)}},{t:'أعتذر، لا أستطيع الآن',fn:()=>say('يمكنك العودة لمساعدتها عندما تكون مستعدًا.')}])}
 function evLost(it){const ev=it.ev;if(ev.done)return say('عاد الطفل إلى أمه، وهما يشكرانك.');if(WK.fol)return;setHumanEmotion(ev.npc,'sad');
  showDlg('طفل يبكي: «أضعتُ أمي!»','',[{t:'لا تخف، سأرافقك إلى الساحة لنجد أمك',fn:()=>{escort(ev.npc,ev.dest,ev,'لمّ الله شمل الطفل وأمه',80)}},{t:'سأبحث عن شخص يساعدنا',fn:()=>say('تأكد من أن الطفل في مكان آمن، ثم عد إليه عندما تستعد للمساعدة.')}])}
 function evChange(it){
@@ -1104,8 +1119,8 @@ function startWalkMode(){started=true;walkMode=true;document.body.classList.add(
  w.rects.push({x0:homeX+.15,x1:homeX+6.35,z0:homeZ-4.25,z1:homeZ+4.25});
  const mom=mk('owner',-67.6,-50,-Math.PI/2);it('mom',-67.6,-50,'Talk to Mom',talkMom,{npc:mom});
  ERR.forEach((e,i)=>{const st=stallProp(e.col,[0xc99a5b,0xd8b073,0x6bbf59,0xd94b3d],e.shopName+'|'+e.ownerName);st.position.set(e.sx,0,Zl(e.zl));st.rotation.y=e.rot;PG.add(st);w.rects.push({x0:e.sx-1.0,x1:e.sx+1.0,z0:Zl(e.zl)-1.6,z1:Zl(e.zl)+1.6});const v=mk(e.kind,e.vx,e.zl,-e.rot);it(e.id,e.ix,e.zl,'Talk to the '+e.ar,()=>talkShop(i),{npc:v})});
- const ow=mk('owner',-31.2,-10,-Math.PI/2),dd=doorProp();dd.position.set(-30.1,0,Zl(-58));dd.rotation.y=Math.PI/2;PG.add(dd);[[-.6,.6],[-.4,-.3]].forEach((o,k)=>{const b=new T.Mesh(new T.BoxGeometry(.4,.5,.3),bagM[k]);b.position.set(-31.2+o[0],.25,Zl(-10)+o[1]);PG.add(b)});
- it('ow',-31.2,-10,'Talk to the old woman',evOldWoman,{ev:sideQuestState('elderEscort',{npc:ow,dest:{x:-31.4,z:Zl(-58)},done:false})});
+ const groundBags=[],ow=mk('owner',-31.2,-10,-Math.PI/2),dd=doorProp();dd.position.set(-30.1,0,Zl(-58));dd.rotation.y=Math.PI/2;PG.add(dd);[[-.6,.6],[-.4,-.3]].forEach((o,k)=>{const b=new T.Mesh(new T.BoxGeometry(.4,.5,.3),bagM[k]);b.position.set(-31.2+o[0],.25,Zl(-10)+o[1]);PG.add(b);groundBags.push(b)});
+ const elderEv=sideQuestState('elderEscort',{npc:ow,dest:{x:-31.4,z:Zl(-58)},done:false,groundBags});elderEv.groundBags=groundBags;if(elderEv.done)groundBags.forEach(b=>b.visible=false);it('ow',-31.2,-10,'ساعد السيدة المسنّة واحمل أكياسها',evOldWoman,{ev:elderEv});
  const lc=mk('kid',31.2,-52,Math.PI/2),lm=mk('medic',W.sx,4.8,0);it('lost',31.2,-52,'Talk to the crying boy',evLost,{ev:sideQuestState('lostChild',{npc:lc,dest:{x:W.sx,z:Zl(4.8)},done:false})});
  const cs=stallProp(0xc8352f,[0x7a4a2a,0x5a3a22]);cs.position.set(40.9,0,Zl(15));cs.rotation.y=Math.PI/2;PG.add(cs);w.rects.push({x0:40.3,x1:41.5,z0:Zl(15)-1.25,z1:Zl(15)+1.25});const vend=mk('elder',41.7,15,-Math.PI/2);it('change',39.4,15,'Buy dates',evChange,{ev:sideQuestState('honestChange',{stage:0}),npc:vend});
  const os=stallProp(0xe07a2f,[0xf08a24,0xf2a33a]);os.position.set(-31.1,0,Zl(-24));os.rotation.y=Math.PI/2;PG.add(os);w.rects.push({x0:-31.7,x1:-30.5,z0:Zl(-24)-1.25,z1:Zl(-24)+1.25});const fr=mk('boy',-33.2,-21,0);it('dare',-33.2,-21,'Talk to your friend',evDare,{ev:sideQuestState('honestFriend',{done:false,stage:0,npc:fr}),npc:fr});
